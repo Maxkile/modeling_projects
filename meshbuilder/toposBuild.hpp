@@ -239,7 +239,7 @@ namespace topos
         VariableSizeMeshContainer<int> topoSN(temp, BlockSize);    
 
         for(int i = 0; i < (Nx * Ny); ++i) {
-            if (i % Nx != 3) {
+            if (i % Nx != Nx - 1) {
                 temp.push_back(i);
                 temp.push_back(i + 1);
                 BlockSize.push_back(2);
