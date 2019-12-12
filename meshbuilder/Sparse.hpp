@@ -377,3 +377,100 @@ public:
     }
 
 };
+
+template <typename T>
+class SparseCOO:public Sparse<T>{
+
+    std::vector<int> IA;
+
+public:
+
+    SparseCOO(const VariableSizeMeshContainer<int>& topoNN)
+    {
+        this->denseColumns = this->denseRows = topoNN.getBlockNumber();
+
+        for (int i = 0; i < topoNN.getBlockNumber(); ++i){
+            for (int j = 1; j < topoNN.getBlockSize(i); ++j){
+                IA.push_back(topoNN[i][0]);
+                (this->JA).push_back(topoNN[i][j]);
+            }
+        }
+    };
+
+    T** getDenseMatrix() const override
+    {
+        T** dense = new T*[this->denseRows];
+        for(int i = 0;i < this->denseRows;++i)
+        {
+            dense[i] = new T[this->denseColumns];
+            for(int j = 0;j < this->denseColumns;++j)
+            {
+                dense[i][j] = 0;
+            }
+        }
+
+        for(int i = 0; i < IA.size(); ++i) {
+            dense[IA[i]][this->JA[i]] = this->A[i];
+        }
+        return dense;
+    };
+
+    std::vector<T> spmv(const std::vector<T>& x,size_t threadsNumber = 4) const override
+    {
+        std::vector<T> result;
+
+        if (x.size() != this->denseColumns)
+        {
+            std::cerr << "Incompatible sizes!" << std::endl;
+            return result;
+        }
+
+        result.reserve(this->denseRows);
+        for (int i = 0; i < result.size(); ++i) result[i] = 0;
+
+        #pragma omp parallel for num_threads(threadsNumber) reduction(+:result[i])
+        for (int i = 0; i < IA.size(); ++i)
+        {
+            result[IA[i]] += (this->A[i]) * x[this->JA[i]];
+        }
+
+        return result;
+    };
+
+    T* spmv(const T* x,size_t xSize,size_t threadsNumber = 4) const override
+    {
+        T* result = new T[xSize];
+
+        if (xSize != this->denseColumns)
+        {
+            std::cerr << "Incompatible sizes!" << std::endl;
+            return nullptr;
+        }
+
+        for(int i = 0; i < result.size(); ++i) result[i] = 0;
+
+        #pragma omp parallel for num_threads(threadsNumber) reduction(+:result[i])
+        for (int i = 0; i < IA.size(); ++i)
+        {
+            result[IA[i]] += (this->A[i]) * x[this->JA[i]];
+        }
+
+        return result;
+    };
+
+    void printIa() const
+    {
+        std::cout << "IA vector: ";
+        for(size_t i = 0;i < IA.size();++i)
+        {
+            std::cout << IA[i] << " ";
+        }
+        std::cout << std::endl;
+    }
+    
+    void set_values(const std::vector<T>& a)
+    {
+        for (int i = 0; i < a.size(); i++)
+            (this->A).push_back(a[i]);
+    }
+};
