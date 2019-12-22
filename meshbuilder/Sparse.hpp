@@ -512,7 +512,6 @@ public:
 	}
 	
 	void set_model_values() override {
-		std::cout << "Rows: " << this->denseRows << "Columns: " << this->denseColumns << std::endl;
 		T** matr = getDenseMatrix();
 
 		int k = 0; // number non zero element
