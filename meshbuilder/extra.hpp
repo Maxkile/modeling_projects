@@ -1,8 +1,8 @@
 #pragma once
+#include "stdafx.hpp"
 
 #include <cstring>
-#include <stdlib.h>
-#include <iostream>
+#include <cstdlib>
 #include <omp.h>
 
 #include "vmo.hpp"

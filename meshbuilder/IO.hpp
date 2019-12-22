@@ -1,21 +1,9 @@
 #pragma once
+#include "stdafx.hpp"
 
+#include "platformDependencies.hpp"
 #include "FixedSizeMeshContainer.hpp"
 #include "VariableSizeMeshContainer.hpp"
-#include <string>
-#include <iostream>
-
-#ifdef __linux__ 
-
-#include <sys/stat.h>
-
-#elif _WIN32
-
-#include <direct.h>
-#define mkdir(filename,mode) (_mkdir(filename))
-
-#endif
-
 
 
 void draw_grid(int Nx, int Ny, int k3, int k4){

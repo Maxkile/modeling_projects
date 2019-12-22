@@ -1,7 +1,6 @@
 #pragma once    
+#include "stdafx.hpp"
 
-#include <vector>
-#include <iostream>
 #include <fstream>
 
 

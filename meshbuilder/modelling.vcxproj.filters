@@ -44,5 +44,11 @@
     <ClInclude Include="extra.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="stdafx.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="platformDependencies.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

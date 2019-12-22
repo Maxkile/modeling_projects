@@ -110,8 +110,10 @@
   <ItemGroup>
     <ClInclude Include="FixedSizeMeshContainer.hpp" />
     <ClInclude Include="IO.hpp" />
+    <ClInclude Include="platformDependencies.hpp" />
     <ClInclude Include="Sparse.hpp" />
     <ClInclude Include="extra.hpp" />
+    <ClInclude Include="stdafx.hpp" />
     <ClInclude Include="toposBuild.hpp" />
     <ClInclude Include="VariableSizeMeshContainer.hpp" />
     <ClInclude Include="vmo.hpp" />

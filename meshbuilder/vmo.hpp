@@ -1,10 +1,11 @@
 #pragma once
+#include "stdafx.hpp"
 
 #include <iomanip>
-#include <vector>
 #include <cmath>
 #include <omp.h>
 
+#include "platformDependencies.hpp"
 #include "Sparse.hpp"
 
 
@@ -26,7 +27,7 @@ namespace vmo
 			result.resize(size);
 
 			#pragma omp parallel for num_threads(threadsNumber) 
-			for (size_t i = 0; i < size; ++i)
+			for (OPENMP_INDEX_TYPE i = 0; i < size; ++i)
 			{
 				result[i] = a * x[i] + b * y[i];
 			}
@@ -49,7 +50,7 @@ namespace vmo
 		else
 		{
 			#pragma omp parallel for num_threads(threadsNumber) reduction(+:result)
-			for (size_t i = 0; i < size; ++i)
+			for (OPENMP_INDEX_TYPE i = 0; i < size; ++i)
 			{
 				result += x[i] * y[i];
 			}
@@ -65,7 +66,7 @@ namespace vmo
 		result.resize(x.size());
 
 		#pragma omp parallel for num_threads(threadsNumber) 
-		for (size_t i = 0; i < x.size(); ++i)
+		for (OPENMP_INDEX_TYPE i = 0; i < x.size(); ++i)
 		{
 			result[i] = scalar * x[i];
 		}
@@ -209,7 +210,6 @@ namespace vmo
 			{
 				rev_M[i] = new double[size];
 			}
-			// M** dense = A.getDenseMatrix();
 
 			std::vector<M> diagonal = A.getDiagonal();
 
@@ -228,10 +228,8 @@ namespace vmo
 
 			for (size_t i = 0; i < size; ++i)
 			{
-				// delete[] dense[i];
 				delete[] rev_M[i];	
 			}
-			// delete[] dense;
 			delete[] rev_M;
 
 			//initializang parameters for algorithm

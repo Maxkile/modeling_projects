@@ -3,7 +3,6 @@
 #include <list>
 #include <iterator>
 #include <vector>
-#include <string.h>
 #include <omp.h>
 #include <cstring>
 #include <cstdlib>

@@ -1,4 +1,5 @@
 #pragma once
+#include "stdafx.hpp"
 
 #include "FixedSizeMeshContainer.hpp"
 #include "VariableSizeMeshContainer.hpp"

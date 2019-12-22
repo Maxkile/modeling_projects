@@ -1,11 +1,12 @@
 #pragma once
+#include "stdafx.hpp"
 
-#include "VariableSizeMeshContainer.hpp"
-#include <vector>
 #include <omp.h>
 #include <algorithm>
 #include <iomanip>
-#include <math.h>
+#include <cmath>
+#include "platformDependencies.hpp"
+#include "VariableSizeMeshContainer.hpp"
 
 template<typename T>
 class Sparse
@@ -148,7 +149,7 @@ public:
 		else
 		{
 			#pragma omp parallel for num_threads(threadsNumber)//TODO: ask about template reduction
-			for (size_t i = 0; i < this->denseRows; ++i)
+			for (OPENMP_INDEX_TYPE i = 0; i < this->denseRows; ++i)
 			{
 				y[i] = 0;
 
@@ -175,7 +176,7 @@ public:
 			T* y = new T[xSize];//need to deallocate then
 
 			#pragma omp parallel for num_threads(threadsNumber) 
-			for (size_t i = 0; i < this->denseRows; ++i)
+			for (OPENMP_INDEX_TYPE i = 0; i < this->denseRows; ++i)
 			{
 				y[i] = 0;
 
@@ -429,7 +430,7 @@ public:
 		}
 
 		#pragma omp parallel for num_threads(threadsNumber)
-		for (size_t i = 0; i < this->denseRows; i++)
+		for (OPENMP_INDEX_TYPE i = 0; i < this->denseRows; i++)
 		{
 
 			result[i] = 0;
@@ -451,7 +452,7 @@ public:
 		}
 
 		#pragma omp parallel for num_threads(threadsNumber)
-		for (size_t i = 0; i < this->denseRows; ++i) {
+		for (OPENMP_INDEX_TYPE i = 0; i < this->denseRows; ++i) {
 
 			result[i] = 0;
 
@@ -609,7 +610,7 @@ public:
 		}
 
 		#pragma omp parallel for num_threads(threadsNumber)
-		for (size_t i = 0; i < IA.size(); ++i)
+		for (OPENMP_INDEX_TYPE i = 0; i < IA.size(); ++i)
 		{
 			result[IA[i]] += (this->A[i]) * x[this->JA[i]];
 		}
@@ -630,7 +631,7 @@ public:
 		for (size_t i = 0; i < xSize; ++i) result[i] = 0;
 
 		#pragma omp parallel for num_threads(threadsNumber)
-		for (size_t i = 0; i < IA.size(); ++i)
+		for (OPENMP_INDEX_TYPE i = 0; i < IA.size(); ++i)
 		{
 			result[IA[i]] += (this->A[i]) * x[this->JA[i]];
 		}
