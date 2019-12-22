@@ -18,13 +18,13 @@ public:
 
     FixedSizeMeshContainer();
 
-    FixedSizeMeshContainer(int num);
+    FixedSizeMeshContainer(size_t num);
 
-    FixedSizeMeshContainer(const vector<T>& source,int blockSize);
+    FixedSizeMeshContainer(const vector<T>& source,size_t blockSize);
 
     FixedSizeMeshContainer(const FixedSizeMeshContainer<T>& source);
 
-    void setBlockSize(unsigned int newSize);
+    void setBlockSize(size_t newSize);
 
     //Can only add elements of vectors which sizes are divided without remainder into {M}
     bool add(const vector<T>& extra);
@@ -98,10 +98,10 @@ FixedSizeMeshContainer<T>::FixedSizeMeshContainer()
 }
 
 template<typename T>
-FixedSizeMeshContainer<T>::FixedSizeMeshContainer(int num):blockSize(num){};
+FixedSizeMeshContainer<T>::FixedSizeMeshContainer(size_t num):blockSize(num){};
 
 template <typename T>
-FixedSizeMeshContainer<T>::FixedSizeMeshContainer(const vector<T>& source,int blockSize):blockSize(blockSize)
+FixedSizeMeshContainer<T>::FixedSizeMeshContainer(const vector<T>& source,size_t blockSize):blockSize(blockSize)
 {
     V.reserve(source.size());
     for(typename vector<T>::const_iterator it = source.begin(); it != source.end();++it)
@@ -119,7 +119,7 @@ FixedSizeMeshContainer<T>::FixedSizeMeshContainer(const FixedSizeMeshContainer<T
 }
 
 template <typename T>
-void FixedSizeMeshContainer<T>::setBlockSize(unsigned int newSize)
+void FixedSizeMeshContainer<T>::setBlockSize(size_t newSize)
 {
     blockSize = newSize;
 }
@@ -155,11 +155,11 @@ bool FixedSizeMeshContainer<T>::add(const FixedSizeMeshContainer<T>& extra)
     }
     else
     {
-        int odlBlocksNum = getBlockNumber();
+        size_t odlBlocksNum = getBlockNumber();
         V.resize((getBlockNumber() + extra.getBlockNumber()) * blockSize);
-        for(int i = odlBlocksNum;i<getBlockNumber();++i)
+        for(size_t i = odlBlocksNum;i<getBlockNumber();++i)
         {
-            for(int j = 0;j<blockSize;++j)
+            for(size_t j = 0;j<blockSize;++j)
             {
                 operator[](i)[j] = extra[i - odlBlocksNum][j];
             }

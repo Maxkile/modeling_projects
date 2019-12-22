@@ -153,7 +153,7 @@ public:
 			{
 				y[i] = 0;
 
-				for (size_t j = i * this->rowOffset; j < (i + 1) * this->rowOffset; ++j)
+				for (OPENMP_INDEX_TYPE j = i * this->rowOffset; j < (i + 1) * this->rowOffset; ++j)
 				{
 					y[i] += x[this->JA[j]] * this->A[j];
 				}
@@ -180,7 +180,7 @@ public:
 			{
 				y[i] = 0;
 
-				for (size_t j = i * rowOffset; j < (i + 1) * rowOffset; ++j)
+				for (OPENMP_INDEX_TYPE j = i * rowOffset; j < (i + 1) * rowOffset; ++j)
 				{
 					y[i] += x[this->JA[j]] * this->A[j];
 				}
@@ -512,6 +512,7 @@ public:
 	}
 	
 	void set_model_values() override {
+		std::cout << "Rows: " << this->denseRows << "Columns: " << this->denseColumns << std::endl;
 		T** matr = getDenseMatrix();
 
 		int k = 0; // number non zero element

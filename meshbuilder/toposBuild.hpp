@@ -15,8 +15,8 @@ namespace topos
 
         for (int i = 0; i < Ny; i++) {
             for (int j = 0; j < Nx; j++) {
-                temp.push_back((Lx / (Nx - 1)) * j);
-                temp.push_back((Ly / (Ny - 1)) * i);
+                temp.push_back(static_cast<T>((Lx / (Nx - 1)) * j));
+                temp.push_back(static_cast<T>((Ly / (Ny - 1)) * j));
             }
         }
 		C.add(temp);

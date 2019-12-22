@@ -13,7 +13,7 @@
 namespace vmo
 {
 	template<typename VT, typename ST>
-	std::vector<VT> axpby(const std::vector<VT>& x, const std::vector<VT>& y, const ST& a, const ST& b, unsigned short threadsNumber = 4)
+	std::vector<VT> axpby(const std::vector<VT>& x, const std::vector<VT>& y, const ST& a, const ST& b, size_t threadsNumber = 4)
 	{
 		std::vector<VT> result;
 		size_t size = x.size();
@@ -37,7 +37,7 @@ namespace vmo
 
 
 	template<typename VT>
-	VT dot(const std::vector<VT>& x, const std::vector<VT>& y, unsigned short threadsNumber = 4)
+	VT dot(const std::vector<VT>& x, const std::vector<VT>& y, size_t threadsNumber = 4)
 	{
 		VT result = 0;
 		size_t size = x.size();
@@ -59,7 +59,7 @@ namespace vmo
 	}
 
 	template<typename VT>
-	std::vector<VT> multiply(const std::vector<VT>& x, VT scalar, unsigned short threadsNumber = 4)
+	std::vector<VT> multiply(const std::vector<VT>& x, VT scalar, size_t threadsNumber = 4)
 	{
 		std::vector<VT> result;
 
@@ -221,7 +221,6 @@ namespace vmo
 					rev_M[i][j] = 0.0;
 				}
 				rev_M[i][i] = 1 / (diagonal[i] + 0.001);
-				std::cout << diagonal[i] << std::endl;
 			}
 
 			SparseELL<double> reverse_M(rev_M, size, size);//preconditioner

@@ -12,14 +12,14 @@
 #include "FixedSizeMeshContainer.hpp"
 #include "vtkGenerator.hpp"
 #include "IO.hpp"
-#include "extra.hpp"
+#include "solver.hpp"
 
 using namespace std;
 
 int main(int argc, char **argv) {
 
     int Nx, Ny, k3, k4, nE;
-    double Lx, Ly;
+    int Lx, Ly;
     FixedSizeMeshContainer<double> C;//coordinates
     VariableSizeMeshContainer<int> topoEN;
     VariableSizeMeshContainer<int> topoNE;
