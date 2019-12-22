@@ -40,9 +40,9 @@ public:
 
     FixedSizeMeshContainer& operator+=(const FixedSizeMeshContainer<T>& extra);
 
-    T* operator[](int i);
+    T* operator[](size_t i);
 
-    const T* operator[](int i) const;
+    const T* operator[](size_t i) const;
 
     size_t getBlockNumber() const;
 
@@ -52,9 +52,9 @@ public:
 
     void inline printContainer(ostream& out = cout) const
     {
-        for(int i = 0;i<getBlockNumber();++i) 
+        for(size_t i = 0;i<getBlockNumber();++i) 
         {
-            for(int j = 0;j < blockSize;++j)
+            for(size_t j = 0;j < blockSize;++j)
             {
                 if (j % 2 == 0)
                 {
@@ -73,9 +73,9 @@ public:
     void inline printContainer(ofstream& out) const
     {
 
-        for(int i = 0;i<getBlockNumber();++i) 
+        for(size_t i = 0;i<getBlockNumber();++i) 
         {
-            for(int j = 0;j < blockSize;++j)
+            for(size_t j = 0;j < blockSize;++j)
             {
                 out << operator[](i)[j];
                 out << " ";
@@ -86,6 +86,8 @@ public:
 
         out << endl;
     }
+
+    void clear();
 
 };
 
@@ -195,7 +197,7 @@ FixedSizeMeshContainer<T>& FixedSizeMeshContainer<T>::operator+=(const FixedSize
 }
 
 template <typename T>
-T* FixedSizeMeshContainer<T>::operator[](int i)
+T* FixedSizeMeshContainer<T>::operator[](size_t i)
 {
     if (i >= getBlockNumber())
     {
@@ -209,7 +211,7 @@ T* FixedSizeMeshContainer<T>::operator[](int i)
 }
 
 template <typename T>
-const T* FixedSizeMeshContainer<T>::operator[](int i) const
+const T* FixedSizeMeshContainer<T>::operator[](size_t i) const
 {
     if (i >= getBlockNumber())
     {
@@ -238,4 +240,10 @@ template <typename T>
 size_t FixedSizeMeshContainer<T>::getTotalSize() const
 {
      return V.size();
+}
+
+template <typename T>
+void FixedSizeMeshContainer<T>::clear()
+{
+    V.clear();
 }

@@ -2,11 +2,10 @@
 
 #include <typeinfo>
 #include <fstream>
-#include <filesystem>
 
-#define CELL_TYPE_TRIANGLE 5
-#define CELL_TYPE_RECTANGLE 9
-#define BC_TYPE -1
+constexpr unsigned short CELL_TYPE_TRIANGLE = 5;
+constexpr unsigned short CELL_TYPE_RECTANGLE = 9;
+constexpr short BC_TYPE = -1;
 
 using namespace std;
 
@@ -51,7 +50,7 @@ public:
 
         out << "CELL_TYPES " << topoEN.getBlockNumber() << endl;
 
-        for (int i = 0; i < topoEN.getBlockNumber();++i)
+        for (size_t i = 0; i < topoEN.getBlockNumber();++i)
         {
             switch(topoEN.getBlockSize(i))
             {
@@ -70,7 +69,7 @@ public:
 
         out << "LOOKUP_TABLE " << "default" << endl;
 
-        for (int i = 0; i < pointsNumber;++i)
+        for (size_t i = 0; i < pointsNumber;++i)
         {
             out << BC_TYPE << " ";
         }

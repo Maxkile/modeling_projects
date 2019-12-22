@@ -13,7 +13,7 @@ class VariableSizeMeshContainer
 {
     size_t blockNumber;
 
-    vector<int> IA;//offset vector. Size is (N+1)
+    vector<size_t> IA;//offset vector. Size is (N+1)
     vector<T> V;//main grid vector
 
     size_t countBlockNumber(size_t vectorSize, const vector<int>& blockSizes);
@@ -44,13 +44,13 @@ public:
 
     VariableSizeMeshContainer& operator+=(const VariableSizeMeshContainer<T>& extra);
 
-    T* operator[](int i);
+    T* operator[](size_t i);
 
-    const T* operator[](int i) const;
+    const T* operator[](size_t i) const;
 
     size_t getBlockNumber() const;
 
-    size_t getBlockSize(int i) const;
+    size_t getBlockSize(size_t i) const;
 
     size_t getTotalSize() const;
 
@@ -78,7 +78,7 @@ public:
 
     void inline printContainer(ostream& out = cout) const
     {
-        for(int i = 0;i<blockNumber;++i)
+        for(size_t i = 0;i<blockNumber;++i)
         {
             // 15 всего пробелов
             for (int j = 0; j < 7; j++)
@@ -91,7 +91,7 @@ public:
                 out << " ";
             }
             out << "|    ";
-            for(int j = 0;j < getBlockSize(i);++j)
+            for(size_t j = 0;j < getBlockSize(i);++j)
             {
                 out << operator[](i)[j];
                 if (j != getBlockSize(i) - 1)   out << ",";
@@ -103,11 +103,11 @@ public:
     void inline printContainer(ofstream& out) const
     {
 
-        for(int i = 0;i<blockNumber;++i)
+        for(size_t i = 0;i<blockNumber;++i)
         {
             out << getBlockSize(i) << " ";
 
-            for(int j = 0;j < getBlockSize(i);++j)
+            for(size_t j = 0;j < getBlockSize(i);++j)
             {
                 out << operator[](i)[j];
                 out << " ";
@@ -116,6 +116,21 @@ public:
         }
         out << endl;
     }
+
+    void inline printLikeMatrixFormat(ostream& out = cout) const
+    {
+         for(size_t i = 0;i<blockNumber;++i)
+         {
+            for(size_t j = 0;j < getBlockSize(i);++j)
+            {
+                out << operator[](i)[j];
+                out << " ";
+            }
+            out << endl;
+         }
+    }
+
+    void clear();
 
 };
 
@@ -137,7 +152,7 @@ size_t VariableSizeMeshContainer<T>::countBlockNumber(size_t vectorSize, const v
 {
     int blockNum = 0;
     int delta = 0;
-    for(int i = 0,j = 0;i<vectorSize;++i)
+    for(size_t i = 0,j = 0;i<vectorSize;++i)
     {
         delta++;
         if (delta == blockSizes[j])
@@ -188,7 +203,7 @@ VariableSizeMeshContainer<T>::VariableSizeMeshContainer(const vector<T>& source,
         }
         int offset = 0;
         IA.push_back(offset);
-        for(typename vector<T>::const_iterator it = blockSizes.begin(); it != blockSizes.end();++it)
+        for(typename vector<int>::const_iterator it = blockSizes.begin(); it != blockSizes.end();++it)
         {
             offset += *it;
             IA.push_back(offset);
@@ -220,14 +235,15 @@ bool VariableSizeMeshContainer<T>::add(const vector<T>& extra,const vector<int>&
     else
     {
         this->blockNumber += countBlockNumber(extra.size(),blockSizes);
-        V.reserve(V.size() + extra.size() - 1);//error was here: need to reserve exactly V.size() + extra.size() - 1, not V.size() + extra.size()
+        V.reserve(V.size() + extra.size());
         IA.reserve(blockNumber + blockSizes.size());
+        
         for(typename vector<T>::const_iterator it = extra.begin(); it != extra.end();++it)
         {
             V.push_back(*it);
         }
         int offset = IA[IA.size() - 1];
-        for(typename vector<T>::const_iterator it = blockSizes.begin(); it != blockSizes.end();++it)
+        for(typename vector<int>::const_iterator it = blockSizes.begin(); it != blockSizes.end();++it)
         {
             offset += *it;
             IA.push_back(offset);
@@ -300,7 +316,7 @@ VariableSizeMeshContainer<T>& VariableSizeMeshContainer<T>::operator+=(const Var
 }
 
 template <typename T>
-T* VariableSizeMeshContainer<T>::operator[](int i)
+T* VariableSizeMeshContainer<T>::operator[](size_t i)
 {
     if (i >= blockNumber)
     {
@@ -314,7 +330,7 @@ T* VariableSizeMeshContainer<T>::operator[](int i)
 }
 
 template <typename T>
-const T* VariableSizeMeshContainer<T>::operator[](int i) const
+const T* VariableSizeMeshContainer<T>::operator[](size_t i) const
 {
     if (i >= blockNumber)
     {
@@ -334,7 +350,7 @@ size_t VariableSizeMeshContainer<T>::getBlockNumber() const
 }
 
 template <typename T>
-size_t VariableSizeMeshContainer<T>::getBlockSize(int i) const
+size_t VariableSizeMeshContainer<T>::getBlockSize(size_t i) const
 {
     return IA[i+1] - IA[i];
 }
@@ -343,4 +359,11 @@ template <typename T>
 size_t VariableSizeMeshContainer<T>::getTotalSize() const
 {
     return V.size();
+}
+
+template <typename T>
+void VariableSizeMeshContainer<T>::clear()
+{
+    IA.clear();
+    V.clear();
 }

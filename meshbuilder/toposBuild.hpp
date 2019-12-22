@@ -1,25 +1,25 @@
+#pragma once
+
 #include "FixedSizeMeshContainer.hpp"
 #include "VariableSizeMeshContainer.hpp"
 #include <omp.h>
 
-#pragma once
-
 namespace topos
 {
-
+	
     //coords
     template<typename T>
-    void build_coord(FixedSizeMeshContainer<T>& C, T Lx, T Ly, int Nx, int Ny){
+    void build_coord(FixedSizeMeshContainer<T>& C, int Lx, int Ly, int Nx, int Ny){
         vector<T> temp;
 
         for (int i = 0; i < Ny; i++) {
             for (int j = 0; j < Nx; j++) {
                 temp.push_back((Lx / (Nx - 1)) * j);
                 temp.push_back((Ly / (Ny - 1)) * i);
-                C.add(temp);
-                temp.clear();
             }
         }
+		C.add(temp);
+		temp.clear();
     }
     
     // topoEN
@@ -86,38 +86,81 @@ namespace topos
         return topoEN;
     }
 
-    // topoNE
+    //topoSN
+    VariableSizeMeshContainer<int> build_topoSN(int Nx, int Ny, int k3, int k4){
+        vector<int> BlockSize;
+        vector<int> temp;
+        int k = 0;
+        VariableSizeMeshContainer<int> topoSN(temp, BlockSize);    
+
+        for(int i = 0; i < (Nx * Ny); ++i) {
+            if (i % Nx != Nx - 1) {
+                temp.push_back(i);
+                temp.push_back(i + 1);
+                BlockSize.push_back(2);
+            }
+
+            if (i >= Nx) {
+                temp.push_back(i);
+                temp.push_back(i - Nx);
+                BlockSize.push_back(2);
+            }
+
+            if ((i % Nx != Nx - 1) && (i >= Nx)){
+                if (k < k3) {
+                    temp.push_back(i);
+                    temp.push_back(i - Nx + 1);
+                    BlockSize.push_back(2);
+                }
+
+                ++k;
+
+                if (k == k3 + k4)
+                    k = 0;  
+            }
+        }
+		topoSN.add(temp, BlockSize);
+		temp.clear();
+		BlockSize.clear();
+
+        return topoSN;
+    } 
+
+    //reverse topology
     template<typename T>
-    VariableSizeMeshContainer<T> build_topoNE(const VariableSizeMeshContainer<T>& topoEN){
+    VariableSizeMeshContainer<T> build_reverse_topo(const VariableSizeMeshContainer<T>& topo)
+    {
         vector<int> BlockSize;
         vector<T> temp;
         vector<int> count_i_mas;
         vector<int> count_mass;
 
-        VariableSizeMeshContainer<T> topoNE(temp, BlockSize);
-        size_t nE = topoEN.getBlockNumber();
+        VariableSizeMeshContainer<T> reverse_topo(temp, BlockSize);
+        size_t nE = topo.getBlockNumber();
         
         int nN = 0;
-        for (int i = 0; i < nE; i++){
-            for (int j = 0; j < topoEN.getBlockSize(i); j++)
-                if (topoEN[i][j]>nN)
-                    nN = topoEN[i][j];
+        for (size_t i = 0; i < nE; i++){
+            for (size_t j = 0; j < topo.getBlockSize(i); j++)
+                if (topo[i][j]>nN)
+                    nN = topo[i][j];
         }
         nN++;
-
+		
         count_i_mas.reserve(nN);
         count_mass.reserve(nN);
     
+		
                 
         for (int i = 0; i < nN; i++){
-            count_mass[i] = 0;
-            count_i_mas[i] = 0;
-        }
+            count_mass.push_back(0);
+            count_i_mas.push_back(0);
+		}
 
-        for (int i = 0; i < nE; i++){
-            for (int j = 0; j < topoEN.getBlockSize(i); j++) {
-                count_mass[topoEN[i][j]]++;
-                count_i_mas[topoEN[i][j]]++;
+
+        for (size_t i = 0; i < nE; i++){
+            for (size_t j = 0; j < topo.getBlockSize(i); j++) {
+                count_mass[topo[i][j]]++;
+                count_i_mas[topo[i][j]]++;
             }
         }
         for (int i = 0; i < nN; i++){
@@ -127,24 +170,23 @@ namespace topos
         }
          
 
+        reverse_topo.add(temp,BlockSize);
 
-        topoNE.add(temp,BlockSize);
-
-        for (int i = 0; i < nE; i++){
-            for (int j = 0; j < topoEN.getBlockSize(i); j++){
-                topoNE[topoEN[i][j]][count_mass[topoEN[i][j]] - count_i_mas[topoEN[i][j]]] = i;
-                count_i_mas[topoEN[i][j]]--;
+        for (size_t i = 0; i < nE; i++){
+            for (size_t j = 0; j < topo.getBlockSize(i); j++){
+                reverse_topo[topo[i][j]][count_mass[topo[i][j]] - count_i_mas[topo[i][j]]] = i;
+                count_i_mas[topo[i][j]]--;
             }
         }
 
-        return topoNE;
+        return reverse_topo;
     }
 
-    // topoSN
-    VariableSizeMeshContainer<int> build_topoSN(int Nx, int Ny){
+    // topoBSN
+    VariableSizeMeshContainer<int> build_topoBSN(int Nx, int Ny){
         vector<int> BlockSize;
         vector<int> temp;
-        VariableSizeMeshContainer<int> topoSN(temp, BlockSize);
+        VariableSizeMeshContainer<int> topoBSN(temp, BlockSize);
 
         for(int i = 0; i < Nx - 1; ++i) {
             temp.push_back(0);
@@ -152,7 +194,7 @@ namespace topos
             temp.push_back(i + 1);
             BlockSize.push_back(3);
 
-            topoSN.add(temp, BlockSize);
+            topoBSN.add(temp, BlockSize);
 
             temp.clear();
             BlockSize.clear();
@@ -182,19 +224,19 @@ namespace topos
                 temp.push_back(Nx + Nx + Ny - 3 + i + 1);
             BlockSize.push_back(3);
         }
-        topoSN.add(temp, BlockSize);
+        topoBSN.add(temp, BlockSize);
         temp.clear();
         BlockSize.clear();
-        return topoSN;
+        return topoBSN;
     }
 
-    // topoNS
+    // topoBNS
     template<typename T>
-    VariableSizeMeshContainer<T> build_topoNS(const VariableSizeMeshContainer<T>& topo){
+    VariableSizeMeshContainer<T> build_topoBNS(const VariableSizeMeshContainer<T>& topo){
         vector<int> BlockSize;
         vector<T> temp;
         int Nx, Ny;
-        VariableSizeMeshContainer<T> topoNS(temp, BlockSize);       
+        VariableSizeMeshContainer<T> topoBNS(temp, BlockSize);       
         for(Nx = 1; topo[Nx - 1][0] == 0; ++Nx) {}
 
         for(Ny = 1; topo[Nx + Ny - 2][0] == 1; ++Ny) {}
@@ -210,9 +252,66 @@ namespace topos
             BlockSize.push_back(2);           
         }
 
-        topoNS.add(temp, BlockSize);
+        topoBNS.add(temp, BlockSize);
         temp.clear();        
         BlockSize.clear();
-        return topoNS;
+        return topoBNS;
+    }
+
+
+    //topoNN
+    template<typename T>
+    VariableSizeMeshContainer<T> build_topoNN(const VariableSizeMeshContainer<T>& topoSN){
+        vector<int> BlockSize;
+        vector<T> temp;
+        vector<int> count_i_mas;
+        vector<int> count_mass;
+        int k;
+
+        VariableSizeMeshContainer<T> topoNN(temp, BlockSize);
+        int nS = topoSN.getBlockNumber();
+        
+        int nN = 0;
+        for (int i = 0; i < nS; i++){
+            for (size_t j = 0; j < topoSN.getBlockSize(i); j++)
+                if (topoSN[i][j]>nN)
+                    nN = topoSN[i][j];
+        }
+        nN++;
+       
+        count_i_mas.reserve(nN);
+        count_mass.reserve(nN);
+
+        for (int i = 0; i < nN; i++){
+            count_mass.push_back(0);
+            count_i_mas.push_back(0);
+        }
+
+        for (int i = 0; i < nS; i++){
+            for (size_t j = 0; j < topoSN.getBlockSize(i); j++) {
+                count_mass[topoSN[i][j]]++;
+                count_i_mas[topoSN[i][j]]++;
+            }
+        }
+
+        
+        for (int i = 0; i < nN; i++){
+            BlockSize.push_back(count_mass[i]);
+            for (int j = 0; j < count_mass[i]; j++)
+                temp.push_back(0);
+        }
+         
+        topoNN.add(temp,BlockSize);
+
+        for (int i = 0; i < nS; i++){
+            for (size_t j = 0; j < topoSN.getBlockSize(i); j++){
+                k = count_mass[topoSN[i][j]] - count_i_mas[topoSN[i][j]];
+                topoNN[topoSN[i][j]][k] = j ? topoSN[i][0] : topoSN[i][1];
+                count_i_mas[topoSN[i][j]]--;
+            }
+        }
+        
+
+        return topoNN;
     }
 }
