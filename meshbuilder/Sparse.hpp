@@ -24,7 +24,6 @@ public:
 	virtual T** getDenseMatrix() const = 0;
 	virtual void setValues(const std::vector<T>&) = 0;
 	virtual size_t getValuesSize() const = 0;
-	virtual void set_model_values() = 0;
 	virtual std::vector<T> getDiagonal() const = 0;
 	
 	
@@ -85,31 +84,167 @@ public:
 template<typename T>
 class SparseELL : public Sparse<T>
 {
+	size_t rowOffset, valuesSize;
+
+
+	size_t findRowOffset(const VariableSizeMeshContainer<int>& topoNN)
+	{
+		size_t maxRowOffset = 1;
+
+		for (size_t i = 0; i < topoNN.getBlockNumber(); ++i)
+		{
+			if (topoNN.getBlockSize(i) > maxRowOffset)
+			{
+				maxRowOffset = topoNN.getBlockSize(i);
+			}
+		}
+		return (maxRowOffset + 1);//"+1" - for diagonal
+	}
+
+	size_t findRowOffset(T** dense,size_t rows,size_t columns)
+	{
+		size_t maxRowOffset = 1;
+		size_t rowElementCount;
+
+		for (size_t i = 0; i < rows; ++i)
+		{
+			rowElementCount = 1;//"1" - for diagonal
+			for (size_t j = 0; j < columns; ++j)
+			{
+				if (dense[i][j] != 0)
+				{
+					rowElementCount++;
+				}
+			}
+			if (maxRowOffset < rowElementCount)
+			{
+				maxRowOffset = rowElementCount;
+			}
+		}
+		return maxRowOffset;
+	}
+
+	void setPortraitValues()
+	{
+		size_t index_i, index_j, diagIndex;
+		diagIndex = 0;
+		T rowSum;
+		for (size_t i = 0; i < this->denseRows; ++i)
+		{
+			rowSum = 0;
+			for (size_t j = i * this->rowOffset; j < (i + 1) * this->rowOffset; ++j)
+			{
+				if (this->A[j] != 0)//padding
+				{
+					index_i = i;
+					index_j = this->JA[j];
+					if (index_i != index_j)
+					{
+						this->A[j] = sin(index_i + index_j);
+						rowSum += abs(this->A[j]);
+					}
+					else
+					{
+						diagIndex = j;
+					}
+				}
+			}
+			this->A[diagIndex] = rowSum * 1.5;
+		}
+	}
+
 public:
+
+	SparseELL(const std::vector<T>& diagonal)//vector is put on primary diagonal,no padding
+	{
+		this->denseRows = this->denseColumns = this->valuesSize = diagonal.size();
+		this->rowOffset = 1;//diagonal
+
+		this->JA.reserve(this->rowOffset * diagonal.size());
+		this->A.reserve(this->rowOffset * diagonal.size());
+
+		for (size_t i = 0; i < this->denseRows; ++i)
+		{
+			this->JA.push_back(i);
+			this->A.push_back(diagonal[i]);
+		}
+	}
 
 	SparseELL(T** dense, size_t rows, size_t columns)//from dense(needed in solver)
 	{
 		this->valuesSize = 0;
 		this->denseRows = rows;
 		this->denseColumns = columns;
-		findRowOffset(dense, this->denseRows, this->denseRows);
-		buildAJA(dense, this->denseRows, this->denseRows);
+		this->rowOffset = findRowOffset(dense,rows,columns);
+
+		this->JA.reserve(this->rowOffset * rows);
+		this->A.reserve(this->rowOffset * rows);
+		
+		size_t rowElemCount;
+
+		for (size_t i = 0; i < rows; ++i)
+		{
+			rowElemCount = 0;
+			
+			for (size_t j = 0; j < columns; ++j)
+			{
+				if (dense[i][j] != 0)
+				{
+					this->JA.push_back(j);
+					this->A.push_back(dense[i][j]);
+					this->valuesSize++;
+					rowElemCount++;
+				}
+			}
+			
+			size_t paddingIndex = this->JA[this->JA.size() - 1];
+
+			for (size_t j = rowElemCount; j < rowOffset; ++j)
+			{
+				this->JA.push_back(paddingIndex);
+				this->A.push_back(0);//padding
+			}
+		}
 	}
 
 	SparseELL(const VariableSizeMeshContainer<int>& topoNN)//from topo
 	{
 		this->valuesSize = 0;
 		this->denseRows = this->denseColumns = topoNN.getBlockNumber();
-		T** m_portrait = build_portrait(topoNN);
+		this->rowOffset = findRowOffset(topoNN);
 
-		findRowOffset(m_portrait, this->denseRows, this->denseRows);
-		buildAJA(m_portrait, this->denseRows, this->denseRows);
+		this->JA.reserve(this->rowOffset * topoNN.getBlockNumber());
+		this->A.reserve(this->rowOffset * topoNN.getBlockNumber());
+
+		std::vector<int> temp;
 
 		for (size_t i = 0; i < topoNN.getBlockNumber(); ++i)
 		{
-			delete[] m_portrait[i];
+			temp.push_back(i);//diag
+			for (size_t j = 0; j < topoNN.getBlockSize(i); ++j)
+			{
+				temp.push_back(topoNN[i][j]);
+			}
+
+			std::sort(temp.begin(), temp.end());
+
+			for (size_t j = 0; j < temp.size(); ++j)
+			{
+				this->JA.push_back(temp[j]);
+				this->A.push_back(1);
+				this->valuesSize++;
+			}
+
+			size_t paddingIndex = this->JA[this->JA.size() - 1];
+
+			for(size_t j = temp.size(); j < rowOffset;++j)
+			{
+				this->JA.push_back(paddingIndex);
+				this->A.push_back(0);//padding
+			}
+			temp.clear();
 		}
-		delete[] m_portrait;
+		setPortraitValues();
 	}
 
 	T** getDenseMatrix() const override
@@ -223,12 +358,11 @@ public:
 	{
 		std::vector<T> diagonal;
 		diagonal.reserve(this->denseColumns);
-
 		for(size_t i = 1; i < this->denseRows + 1;++i)
 		{			
 			for(size_t j = (i - 1) * rowOffset; j < i * rowOffset;++j)
 			{
-				if (this->JA[j] == i - 1)//diag elem
+				if ((this->JA[j] == i - 1) && (this->A[j] != 0))//avoiding padding : when padding index is index of diagonal
 				{
 					diagonal.push_back(this->A[j]);
 				}
@@ -236,132 +370,38 @@ public:
 		}
 		return diagonal;		
 	}
-
-	void set_model_values() override {
-		T** matr = getDenseMatrix();
-
-		int k = 0; // number non zero element
-		std::vector<int> diag;
-		std::vector<T> values((*this).getValuesSize());
-		double sum;
-		
-		// set non diag elements by sin(i+j)
-		for (size_t i = 0; i < this->denseRows; i++)
-			for (size_t j = 0; j < this->denseColumns; j++)
-				if (matr[i][j] != 0){
-					if (i != j)
-						matr[i][j] = values[k] = sin(i + j);
-					else
-						diag.push_back(k);
-					k++;
-				}
-					
-		// set diag elements by (sum(abs(mat[i][j]))) * 1.1
-		for (size_t i = 0; i < this->denseRows; i++){
-			sum = 0;
-			for (size_t j = 0; j < this->denseColumns; j++)
-				if (j != i)
-					sum += abs(matr[i][j]);
-			sum *= 1.1;
-			values[diag[i]] = sum;
-		}
-
-		for (size_t i = 0; i < this->denseRows; ++i)
-		{
-			delete[] matr[i];
-		}
-		delete[] matr;
-		
-		(*this).setValues(values);
-	}
-	
-private:
-	size_t rowOffset, valuesSize;
-
-	void findRowOffset(T** dense, size_t rows, size_t columns)
-	{
-		this->rowOffset = 1;
-		size_t currentRowOffset;
-
-		for (size_t i = 0; i < rows; ++i)
-		{
-			currentRowOffset = 0;
-			for (size_t j = 0; j < columns; ++j)
-			{
-				if (dense[i][j] != 0)
-				{
-					currentRowOffset++;
-				}
-			}
-			if (currentRowOffset > this->rowOffset)
-			{
-				this->rowOffset = currentRowOffset;
-			}
-		}
-	}
-
-	void buildAJA(T** dense, size_t rows, size_t columns)
-	{
-		int rowElemCount;
-
-		this->JA.reserve(this->rowOffset * rows);
-		this->A.reserve(this->rowOffset * rows);
-
-		for (size_t i = 0; i < rows; ++i)
-		{
-			rowElemCount = 0;
-			for (size_t j = 0; j < columns; ++j)
-			{
-				if (dense[i][j] != 0)
-				{
-					this->valuesSize++;
-					this->A.push_back(dense[i][j]);
-					this->JA.push_back(j);
-					rowElemCount++;
-				}
-			}
-			size_t padding_ind = this->JA[this->JA.size() - 1];
-			for (size_t count = rowElemCount; count < this->rowOffset; ++count)
-			{
-				this->A.push_back(0);
-				this->JA.push_back(padding_ind);
-			}
-		}
-	}
-
-	T** build_portrait(const VariableSizeMeshContainer<int>& topoNN) const//not forget to free memory lately
-	{
-		size_t blockNumber = topoNN.getBlockNumber();
-
-		T** portrait = new T*[blockNumber];
-		for (size_t i = 0; i < blockNumber; ++i)
-		{
-			portrait[i] = new T[blockNumber];
-			for (size_t j = 0; j < blockNumber; ++j)
-			{
-				portrait[i][j] = 0;
-			}
-		}
-
-		for (size_t i = 0; i < blockNumber; ++i)
-		{
-			portrait[i][i] = 1;//diagonal
-			for (size_t j = 0; j < topoNN.getBlockSize(i); ++j)
-			{
-				size_t _j = topoNN[i][j];
-				portrait[i][_j] = 1;
-				portrait[_j][i] = 1;
-			}
-		}
-		return portrait;
-	}
-	
 };
 
 template <typename T>
 class SparseCSR :public Sparse<T> {
 
 	std::vector<size_t> IA;//sizes of A and JA are similar
+
+	void setPortraitValues()
+	{
+		size_t index_i, index_j, diagIndex;
+		diagIndex = 0;
+		T rowSum;
+		for (size_t i = 0; i < this->denseRows; ++i)
+		{
+			rowSum = 0;
+			for (size_t j = IA[i]; j < IA[i + 1]; ++j)
+			{
+				index_i = i;
+				index_j = this->JA[j];
+				if (index_i != index_j)
+				{
+					this->A[j] = sin(index_i + index_j);
+					rowSum += abs(this->A[j]);
+				}
+				else
+				{
+					diagIndex = j;
+				}
+			}
+			this->A[diagIndex] = rowSum * 1.5;
+		}
+	}
 
 public:
 
@@ -370,6 +410,9 @@ public:
 		std::vector<int> temp;
 		this->denseColumns = this->denseRows = topoNN.getBlockNumber();
 		int prev;
+
+		this->JA.reserve(topoNN.getBlockNumber());
+		this->A.reserve(topoNN.getBlockNumber());
 
 		IA.push_back(0);
 		for (size_t i = 0; i < topoNN.getBlockNumber(); i++)
@@ -382,7 +425,7 @@ public:
 			std::sort(temp.begin(), temp.end());
 			for (size_t j = 0; j < temp.size(); j++)
 			{
-				Sparse<T>::JA.push_back(temp[j]);
+				this->JA.push_back(temp[j]);
 			}
 			prev = IA[IA.size() - 1];
 			IA.push_back(temp.size() + prev);
@@ -395,7 +438,8 @@ public:
 		{
 			this->A.push_back(1);//portrait
 		}
-	};
+		setPortraitValues();
+	}
 
 	T** getDenseMatrix() const override
 	{
@@ -417,7 +461,7 @@ public:
 			}
 		}
 		return dense;
-	};
+	}
 
 	std::vector<T> spmv(const std::vector<T>& x, size_t threadsNumber = 4) const override
 	{
@@ -440,7 +484,7 @@ public:
 		}
 
 		return result;
-	};
+	}
 
 	T* spmv(const T* x, size_t xSize, size_t threadsNumber = 4) const override
 	{
@@ -511,46 +555,40 @@ public:
 		return diagonal;
 	}
 	
-	void set_model_values() override {
-		T** matr = getDenseMatrix();
-
-		int k = 0; // number non zero element
-		std::vector<int> diag;
-		double sum;
-		
-		// set non diag elements by sin(i+j)
-		for (size_t i = 0; i < this->denseRows; i++)
-			for (size_t j = 0; j < this->denseColumns; j++)
-				if (matr[i][j] != 0){
-					if (i != j)
-						matr[i][j] = this->A[k] = sin(i + j);
-					else
-						diag.push_back(k);
-					k++;
-				}
-	
-		// set diag elements by (sum(abs(mat[i][j]))) * 1.1
-		for (size_t i = 0; i < this->denseRows; i++){
-			sum = 0;
-			for (size_t j = 0; j < this->denseColumns; j++)
-				if (j != i)
-					sum += abs(matr[i][j]);
-			sum *= 1.1;
-			this->A[diag[i]] = sum;
-		}
-
-		for(size_t i = 0;i < this->denseRows;++i)
-		{
-			delete[] matr[i];
-		}
-		delete[] matr;
-	}
 };
 
 template <typename T>
 class SparseCOO :public Sparse<T> {
 
 	std::vector<size_t> IA;//sizes of IA, A and JA are similar
+
+	void setPortraitValues()
+	{
+		size_t index_i, index_j, curRow, diagIndex;
+		T rowSum = 0;
+		diagIndex, curRow = 0;
+		for (size_t i = 0; i < IA.size(); ++i)
+		{
+			index_i = IA[i];
+			index_j = this->JA[i];
+			if (curRow != index_i)//next row
+			{
+				this->A[diagIndex] = rowSum * 1.5;
+				rowSum = 0;
+				curRow = index_i;
+			}
+			if (index_i != index_j)
+			{
+				this->A[i] = sin(index_i + index_j);
+				rowSum += abs(this->A[i]);
+			}
+			else
+			{
+				diagIndex = i;
+			}	
+		}
+		this->A[diagIndex] = rowSum * 1.5;//last
+	}
 
 public:
 
@@ -560,9 +598,12 @@ public:
 
 		this->denseColumns = this->denseRows = topoNN.getBlockNumber();
 
+		this->JA.reserve(topoNN.getBlockNumber());
+		this->A.reserve(topoNN.getBlockNumber());
+
 		for (size_t i = 0; i < topoNN.getBlockNumber(); ++i)
 		{
-			for (size_t j = 0; j < topoNN.getBlockSize(i); j++)
+			for (size_t j = 0; j < topoNN.getBlockSize(i); ++j)
 			{
 				temp.push_back(topoNN[i][j]);
 			}
@@ -578,6 +619,8 @@ public:
 			}
 			temp.clear();
 		}
+
+		setPortraitValues();
 	};
 
 	T** getDenseMatrix() const override
@@ -684,39 +727,5 @@ public:
 		return diagonal;
 	}
 
-	void set_model_values() override {
-		T** matr = getDenseMatrix();
-
-		int k = 0; // number non zero element
-		std::vector<int> diag;
-		double sum;
-		
-		// set non diag elements by sin(i+j)
-		for (size_t i = 0; i < this->denseRows; i++)
-			for (size_t j = 0; j < this->denseColumns; j++)
-				if (matr[i][j] != 0){
-					if (i != j)
-						matr[i][j] = this->A[k] = sin(i + j);
-					else
-						diag.push_back(k);
-					k++;
-				}
-	
-		// set diag elements by (sum(abs(mat[i][j]))) * 1.1
-		for (size_t i = 0; i < this->denseRows; i++){
-			sum = 0;
-			for (size_t j = 0; j < this->denseColumns; j++)
-				if (j != i)
-					sum += abs(matr[i][j]);
-			sum *= 1.1;
-			this->A[diag[i]] = sum;
-		}
-
-		for (size_t i = 0; i < this->denseRows; ++i)
-		{
-			delete[] matr[i];
-		}
-		delete[] matr;
-	}
 
 };

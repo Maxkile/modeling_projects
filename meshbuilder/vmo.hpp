@@ -201,35 +201,17 @@ namespace vmo
 		}
 		else
 		{
-			
-
 			size_t size = A.getDenseColumns();
-
-			double** rev_M = new double*[size];
-			for (size_t i = 0; i < size; ++i)
-			{
-				rev_M[i] = new double[size];
-			}
-
+		
 			std::vector<M> diagonal = A.getDiagonal();
-
+			std::vector<M> rev_M(diagonal.size());
 			//forming preconditioning matrix - M
 			for (size_t i = 0; i < size; ++i)
 			{
-				for (size_t j = 0; j < size; ++j)
-				{
-					rev_M[i][j] = 0.0;
-				}
-				rev_M[i][i] = 1 / (diagonal[i] + 0.001);
+				rev_M[i] = 1 / (diagonal[i] + 0.001);
 			}
-
-			SparseELL<double> reverse_M(rev_M, size, size);//preconditioner
-
-			for (size_t i = 0; i < size; ++i)
-			{
-				delete[] rev_M[i];	
-			}
-			delete[] rev_M;
+				
+			SparseELL<double> reverse_M(rev_M);//preconditioner from diagonal vector
 
 			//initializang parameters for algorithm
 
@@ -248,8 +230,7 @@ namespace vmo
 			double alpha, beta;
 
 			size_t k = 1;
-
-			do
+ 			do
 			{
 				z = reverse_M.spmv(r_prev, threadsNum);
 				delta_cur = dot(r_prev, z, threadsNum);

@@ -2,11 +2,11 @@
 <Project ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LocalDebuggerDebuggerType>Auto</LocalDebuggerDebuggerType>
-    <LocalDebuggerCommandArguments>--gen 1 1 200 100 3 2 --solver ellp 4</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>--gen 1 1 1000 1000 3 2 --solver ellp 4</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <LocalDebuggerCommandArguments>--gen 1 1 500 500 3 2 --solver csr 4</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>--gen 1 1 100 100  3 2 --solver csr 4</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
 </Project>
