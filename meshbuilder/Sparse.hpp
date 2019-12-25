@@ -566,7 +566,8 @@ class SparseCOO :public Sparse<T> {
 	{
 		size_t index_i, index_j, curRow, diagIndex;
 		T rowSum = 0;
-		diagIndex, curRow = 0;
+		diagIndex = 0;
+		curRow = 0;
 		for (size_t i = 0; i < IA.size(); ++i)
 		{
 			index_i = IA[i];

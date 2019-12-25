@@ -254,7 +254,7 @@ namespace vmo
 				{
 					if (k == 1)
 					{
-						std::cout << "| Iteration | norm value |" << endl;
+						std::cout << "| Iteration | Norm value |" << endl;
 					}
 					std::cout << "|" << setw(11) << k << "|" << setw(12) << fixed << setprecision(3) << norm(r_cur) << "|" << endl;
 				}

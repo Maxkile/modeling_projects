@@ -30,7 +30,7 @@ int main(int argc, char **argv) {
 
     double start, end;
 
-    if ((argc == 1) || !((argc == 3) || (argc == 9) || (argc == 10) || (argc == 5) || (argc == 11)) || (strcmp(argv[argc-1], "--print") && strcmp(argv[argc-1], "--out") && strcmp(argv[argc-2], "--out") && strcmp(argv[argc-2], "--vtk") && strcmp(argv[argc-3], "--solver"))){
+    if ((argc == 1) || !((argc == 3) || (argc == 9) || (argc == 10) || (argc == 5) || (argc == 11)) || (strcmp(argv[argc-1], "--print") && strcmp(argv[argc-1], "--out") && strcmp(argv[argc-2], "--out") && strcmp(argv[argc-2], "--vtk") && strcmp(argv[argc-3], "--solver")) || ((strcmp(argv[argc-2],"-csr")) && (strcmp(argv[argc-2],"-coo")) && (strcmp(argv[argc-2],"-ellp")))){
         cout << "Mesh builder and solver v0.2 beta" << endl;
         cout << "Usage:  --gen <Lx> <Ly> <Nx> <Ny> <k3> <k4> | --file \n\t--print | --out (<path>) | --vtk <filename> | --solver <format> <threads>" <<endl;
         cout << "Commands:" << endl;

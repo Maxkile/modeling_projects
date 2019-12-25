@@ -1,7 +1,7 @@
 *.o
 main.cpp
-.gitignore
 .vscode
+.vs
 rw_mesh
 plot.vtk
 out.vtk
@@ -9,3 +9,5 @@ out.txt
 mesh
 Makefile
 test_vtk
+prod
+decision.txt

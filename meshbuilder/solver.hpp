@@ -22,7 +22,7 @@ int solver(VariableSizeMeshContainer<int>& topoNN, const char* type_matr, int th
         return 1;
     }
 
-    if (!strcmp("csr", type_matr))
+    if (!strcmp("-csr", type_matr))
     {
         //csr
         SparseCSR<double> matrix(topoNN);
@@ -41,7 +41,7 @@ int solver(VariableSizeMeshContainer<int>& topoNN, const char* type_matr, int th
         std::cout << "\nTime solution:\n\t" << end - start << " sec" << std::endl;
 		
     }
-    else if (!strcmp("ellp",type_matr))
+    else if (!strcmp("-ellp",type_matr))
     {
         //ellpack
 		SparseELL<double> matrix(topoNN);
@@ -61,7 +61,7 @@ int solver(VariableSizeMeshContainer<int>& topoNN, const char* type_matr, int th
         std::cout << "\nTime solution:\n\t" << end - start << " sec" << std::endl;
 
     }
-    else if (!strcmp("coo",type_matr))
+    else if (!strcmp("-coo",type_matr))
     {
         //coord
         SparseCOO<double> matrix(topoNN);
@@ -87,8 +87,14 @@ int solver(VariableSizeMeshContainer<int>& topoNN, const char* type_matr, int th
     }
 
     fout.open("decision.txt");
+    std::cout << "Writing decision to file..." << std::endl;
+    
     for (size_t i = 0; i < x.size(); i++)
-		fout << x[i] << endl;
+    {
+        fout << x[i] << endl;
+    }
+    std::cout << "Completed" << std::endl;
+
     fout.close();
 	
 	return 0;
