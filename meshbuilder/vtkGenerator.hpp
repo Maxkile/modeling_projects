@@ -18,7 +18,7 @@ public:
 
     vtkGenerator(const std::string& filename)
     {
-        out.open(filename.c_str(),std::fstream::out);
+        out.open((filename + ".vtk").c_str(),std::fstream::out);
     }
 
     void printInVTK(const FixedSizeMeshContainer<T1>& coords,const VariableSizeMeshContainer<T2>& topoEN)

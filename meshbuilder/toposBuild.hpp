@@ -127,7 +127,7 @@ namespace topos
         return topoSN;
     } 
 
-    //reverse topology
+    //reversed topology
     template<typename T>
     VariableSizeMeshContainer<T> build_reverse_topo(const VariableSizeMeshContainer<T>& topo)
     {

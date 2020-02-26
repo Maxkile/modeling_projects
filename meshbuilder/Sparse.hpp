@@ -8,6 +8,8 @@
 #include "platformDependencies.hpp"
 #include "VariableSizeMeshContainer.hpp"
 
+double timeSpmv = 0;
+
 template<typename T>
 class Sparse
 {
@@ -19,8 +21,8 @@ protected:
 
 public:
 
-	virtual std::vector<T> spmv(const std::vector<T>&, size_t threadsNumber = 4) const = 0;
-	virtual T* spmv(const T*, size_t, size_t threadsNumber = 4) const = 0;
+	virtual void spmv(const std::vector<T>&, std::vector<T>& result, size_t threadsNumber = 4) const = 0;
+	virtual void spmv(const T*, std::vector<T>& result, size_t, size_t threadsNumber = 4) const = 0;
 	virtual T** getDenseMatrix() const = 0;
 	virtual void setValues(const std::vector<T>&) = 0;
 	virtual size_t getValuesSize() const = 0;
@@ -78,6 +80,8 @@ public:
 		}
 		delete[] matr;
 	}
+
+	virtual ~Sparse(){}
 	
 };
 
@@ -273,54 +277,50 @@ public:
 		return dense;
 	}
 
-	std::vector<T> spmv(const std::vector<T>& x, size_t threadsNumber = 4) const override
+	void spmv(const std::vector<T>& x, std::vector<T>& result, size_t threadsNumber = 4) const override
 	{
-		std::vector<T> y(x.size());
 		if (x.size() != this->denseColumns)
 		{
 			std::cerr << "Incompatible sizes in spmv!" << std::endl;
-			return y;
 		}
 		else
 		{
+			double start = omp_get_wtime();
 			#pragma omp parallel for num_threads(threadsNumber)//TODO: ask about template reduction
 			for (OPENMP_INDEX_TYPE i = 0; i < this->denseRows; ++i)
 			{
-				y[i] = 0;
+				result[i] = 0;
 
 				for (OPENMP_INDEX_TYPE j = i * this->rowOffset; j < (i + 1) * this->rowOffset; ++j)
 				{
-					y[i] += x[this->JA[j]] * this->A[j];
+					result[i] += x[this->JA[j]] * this->A[j];
 				}
 			}
-
-			return y;
+			timeSpmv += omp_get_wtime() - start;
 		}
 	}
 
-	T* spmv(const T* x, size_t xSize, size_t threadsNumber = 4) const override
+	void spmv(const T* x, std::vector<T>& result, size_t xSize, size_t threadsNumber = 4) const override
 	{
 
 		if (xSize != this->denseColumns)
 		{
 			std::cerr << "Incompatible sizes in spmv!" << std::endl;
-			return nullptr;
 		}
 		else
 		{
-			T* y = new T[xSize];//need to deallocate then
-
+			double start = omp_get_wtime();
 			#pragma omp parallel for num_threads(threadsNumber) 
 			for (OPENMP_INDEX_TYPE i = 0; i < this->denseRows; ++i)
 			{
-				y[i] = 0;
+				result[i] = 0;
 
 				for (OPENMP_INDEX_TYPE j = i * rowOffset; j < (i + 1) * rowOffset; ++j)
 				{
-					y[i] += x[this->JA[j]] * this->A[j];
+					result[i] += x[this->JA[j]] * this->A[j];
 				}
 			}
-			return y;
+			timeSpmv+= omp_get_wtime() - start;
 		}
 	}
 
@@ -463,48 +463,47 @@ public:
 		return dense;
 	}
 
-	std::vector<T> spmv(const std::vector<T>& x, size_t threadsNumber = 4) const override
+	void spmv(const std::vector<T>& x, std::vector<T>& result, size_t threadsNumber = 4) const override
 	{
-		std::vector<T> result(x.size());
-
 		if (x.size() != this->denseColumns)
 		{
 			std::cerr << "Incompatible sizes in spmv!" << std::endl;
-			return result;
 		}
-
-		#pragma omp parallel for num_threads(threadsNumber)
-		for (OPENMP_INDEX_TYPE i = 0; i < this->denseRows; i++)
+		else
 		{
+			double start = omp_get_wtime();
+			#pragma omp parallel for num_threads(threadsNumber)
+			for (OPENMP_INDEX_TYPE i = 0; i < this->denseRows; i++)
+			{
 
-			result[i] = 0;
+				result[i] = 0;
 
-			for (size_t j = IA[i]; j < IA[i + 1]; j++)
-				result[i] += x[this->JA[j]] * (this->A[j]);
+				for (size_t j = IA[i]; j < IA[i + 1]; j++)
+					result[i] += x[this->JA[j]] * (this->A[j]);
+			}
+			timeSpmv+= omp_get_wtime() - start;
 		}
-
-		return result;
 	}
 
-	T* spmv(const T* x, size_t xSize, size_t threadsNumber = 4) const override
+	void spmv(const T* x, std::vector<T>& result, size_t xSize,  size_t threadsNumber = 4) const override
 	{
-		T* result = new T[xSize];
 		if (xSize != this->denseColumns)
 		{
 			std::cerr << "Incompatible sizes in spmv!" << std::endl;
-			return nullptr;
 		}
+		else
+		{
+			double start = omp_get_wtime();
+			#pragma omp parallel for num_threads(threadsNumber)
+			for (OPENMP_INDEX_TYPE i = 0; i < this->denseRows; ++i) {
 
-		#pragma omp parallel for num_threads(threadsNumber)
-		for (OPENMP_INDEX_TYPE i = 0; i < this->denseRows; ++i) {
+				result[i] = 0;
 
-			result[i] = 0;
-
-			for (size_t j = IA[i]; j < IA[i + 1]; j++)
-				result[i] += x[this->JA[j]] * (this->A[j]);
+				for (size_t j = IA[i]; j < IA[i + 1]; j++)
+					result[i] += x[this->JA[j]] * (this->A[j]);
+			}
+			timeSpmv+= omp_get_wtime() - start;
 		}
-
-		return result;
 	}
 
 	void printIa() const
@@ -643,44 +642,44 @@ public:
 		return dense;
 	};
 
-	std::vector<T> spmv(const std::vector<T>& x, size_t threadsNumber = 4) const override
+	void spmv(const std::vector<T>& x, std::vector<T>& result, size_t threadsNumber = 4) const override
 	{
-		std::vector<T> result(x.size());
-
 		if (x.size() != this->denseColumns)
 		{
 			std::cerr << "Incompatible sizes in spmv!" << std::endl;
-			return result;
 		}
-
-		#pragma omp parallel for num_threads(threadsNumber)
-		for (OPENMP_INDEX_TYPE i = 0; i < IA.size(); ++i)
+		else
 		{
-			result[IA[i]] += (this->A[i]) * x[this->JA[i]];
+			for (size_t i = 0; i < result.size(); ++i) result[i] = 0;
+
+			double start = omp_get_wtime();
+			#pragma omp parallel for num_threads(threadsNumber)
+			for (OPENMP_INDEX_TYPE i = 0; i < IA.size(); ++i)
+			{
+				result[IA[i]] += (this->A[i]) * x[this->JA[i]];
+			}
+			timeSpmv+= omp_get_wtime() - start;
 		}
+	}
 
-		return result;
-	};
-
-	T* spmv(const T* x, size_t xSize, size_t threadsNumber = 4) const override
+	void spmv(const T* x, std::vector<T>& result, size_t xSize,  size_t threadsNumber = 4) const override
 	{
-		T* result = new T[xSize];
-
 		if (xSize != this->denseColumns)
 		{
 			std::cerr << "Incompatible sizes in spmv!" << std::endl;
-			return nullptr;
 		}
-
-		for (size_t i = 0; i < xSize; ++i) result[i] = 0;
-
-		#pragma omp parallel for num_threads(threadsNumber)
-		for (OPENMP_INDEX_TYPE i = 0; i < IA.size(); ++i)
+		else
 		{
-			result[IA[i]] += (this->A[i]) * x[this->JA[i]];
-		}
+			for (size_t i = 0; i < xSize; ++i) result[i] = 0;
 
-		return result;
+			double start = omp_get_wtime();
+			#pragma omp parallel for num_threads(threadsNumber)
+			for (OPENMP_INDEX_TYPE i = 0; i < IA.size(); ++i)
+			{
+				result[IA[i]] += (this->A[i]) * x[this->JA[i]];
+			}
+			timeSpmv+= omp_get_wtime() - start;
+		}	
 	};
 
 	void printIa() const

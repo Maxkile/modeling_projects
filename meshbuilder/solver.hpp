@@ -10,81 +10,49 @@
 #include "Sparse.hpp"
 #include "IO.hpp"
 
-int solver(VariableSizeMeshContainer<int>& topoNN, const char* type_matr, int threads = 4) {
-    double start, end;
+
+int solveFromTopoNN(VariableSizeMeshContainer<int>& topoNN, const char* type_matr, int threads = 4) {
+    
     std::vector<double> x;
 	std::ofstream fout;
     size_t n;
+
+    Sparse<double>* matrix = nullptr;
 
     if (threads < 1)
     {
         std::cout << "Threads number can't be lower than 1!" << std::endl;
         return 1;
     }
-
-    if (!strcmp("-csr", type_matr))
+    else if (!strcmp("-csr", type_matr))
     {
-        //csr
-        SparseCSR<double> matrix(topoNN);
-        n = matrix.getDenseRows();
-        vector<double> b(n);
-
-		std::cout << std::endl << "Type matrix: CSR\n" << endl;
-
-        for (size_t i = 1; i < n + 1; i++)
-            b[i - 1] = i;
-
-        start = omp_get_wtime();
-        x = vmo::conGradSolver(matrix,b,threads);
-        end = omp_get_wtime();
-
-        std::cout << "\nTime solution:\n\t" << end - start << " sec" << std::endl;
-		
+        matrix = new SparseCSR<double>(topoNN);
+        std::cout << std::endl << "Type matrix: CSR\n" << endl;
     }
     else if (!strcmp("-ellp",type_matr))
     {
-        //ellpack
-		SparseELL<double> matrix(topoNN);
-
-        n = matrix.getDenseRows();
-        std::vector<double> b(n);
-
-		std::cout << std::endl << "Type matrix: ELLPACK\n" << std::endl;
-
-        for (size_t i = 1; i < n + 1; i++)
-            b[i - 1] = i;
-
-        start = omp_get_wtime();
-        x = vmo::conGradSolver(matrix,b,threads);
-        end = omp_get_wtime();
-
-        std::cout << "\nTime solution:\n\t" << end - start << " sec" << std::endl;
-
+        matrix = new SparseELL<double>(topoNN);
+        std::cout << std::endl << "Type matrix: ELLPACK\n" << endl;
     }
     else if (!strcmp("-coo",type_matr))
     {
-        //coord
-        SparseCOO<double> matrix(topoNN);
-
-        n = matrix.getDenseRows();
-        std::vector<double> b(n);
-
-		std::cout << std::endl << "Type matrix: COO\n" << std::endl;
-		        
-        for (size_t i = 1; i < n + 1; i++)
-            b[i - 1] = i;
-
-        start = omp_get_wtime();
-        x = vmo::conGradSolver(matrix,b,threads);
-        end = omp_get_wtime();
-
-        std::cout << "\nTime solution:\n\t" << end - start << " sec" << std::endl;
+        matrix = new SparseCOO<double>(topoNN);
+        std::cout << std::endl << "Type matrix: COORD\n" << endl;
     }
     else
     {
         std::cout << "Wrong sparse matrix format chosen!" << std::endl;
         return 1;
     }
+
+    n = matrix->getDenseRows();
+
+    vector<double> b(n);
+
+    for (size_t i = 1; i < n + 1; i++)
+        b[i - 1] = i;
+
+    x = vmo::conGradSolver(*matrix,b,threads);
 
     fout.open("decision.txt");
     std::cout << "Writing decision to file..." << std::endl;
@@ -93,9 +61,11 @@ int solver(VariableSizeMeshContainer<int>& topoNN, const char* type_matr, int th
     {
         fout << x[i] << endl;
     }
-    std::cout << "Completed" << std::endl;
+    std::cout << "Writing to file completed" << std::endl;
 
     fout.close();
+
+    delete matrix;
 	
 	return 0;
 }

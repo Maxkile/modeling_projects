@@ -91,19 +91,19 @@ void write_file(FixedSizeMeshContainer<T1>& C, VariableSizeMeshContainer<T2>& to
         }
 	}
 
-    fout.open((path + "mesh.txt").c_str());
+    fout.open((path + "/" "mesh.txt").c_str());
     fout << "Nn " << C.getBlockNumber() << '\n';
     fout << "Nt " << topoEN.getBlockNumber() << '\n';
     fout << "NFaceBC " << topoSN.getBlockNumber() << '\n';
     fout << "NumCoords " << C.getBlockSize() << '\n';
     fout.close();
 
-    fout.open((path + "coordinate.msh").c_str());
+    fout.open((path + "/" + "coordinate.msh").c_str());
     for (size_t i = 0; i < C.getBlockNumber(); i++)
         fout << C[i][0] << " " << C[i][1] << '\n';
     fout.close();
 
-    fout.open((path + "topo.msh").c_str());
+    fout.open((path + "/" + "topo.msh").c_str());
     for (size_t i = 0; i < topoEN.getBlockNumber(); i++) {
         fout << topoEN.getBlockSize(i);
         for (size_t j = 0; j < topoEN.getBlockSize(i); j++)
@@ -112,7 +112,7 @@ void write_file(FixedSizeMeshContainer<T1>& C, VariableSizeMeshContainer<T2>& to
     }
     fout.close();
 
-    fout.open((path + "bctopo.msh").c_str());
+    fout.open((path + "/" + "bctopo.msh").c_str());
     for (size_t i = 0; i < topoSN.getBlockNumber(); i++){
         fout << topoSN.getBlockSize(i) - 1;
         for (size_t j = 1; j < topoSN.getBlockSize(i); j++)
