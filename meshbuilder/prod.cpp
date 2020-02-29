@@ -3,9 +3,10 @@
 #include <list>
 #include <iterator>
 #include <vector>
-#include <omp.h>
 #include <cstring>
 #include <cstdlib>
+#include <omp.h>
+#include <map>
 
 #include "toposBuild.hpp"
 #include "VariableSizeMeshContainer.hpp"
@@ -26,6 +27,7 @@ int main(int argc, char **argv) {
     VariableSizeMeshContainer<int> topoSN;
     VariableSizeMeshContainer<int> topoNS;
     VariableSizeMeshContainer<int> topoNN;
+
     int type = 0;
 
     double start, end;
@@ -43,12 +45,12 @@ int main(int argc, char **argv) {
         cout << "\t--solver                  An example of solving the  Ax = b using the conjugate gradient method " << endl;
         cout << "Options:" << endl;
         cout << "\t<Lx>                      Mesh X length" << endl;
-        cout << "\t<Ly>                      Mesh Y length" << endl;
+        cout << "\t<Ly>                      Mesh Y length" << endl;                
         cout << "\t<Nx>                      Number of X nodes" << endl;
         cout << "\t<Ny>                      Number of Y nodes" << endl;
         cout << "\t<k3>                      Number of squares in sequence" << endl;
         cout << "\t<k4>                      Number of triangles in sequence" << endl;
-        cout << "\t<path>                    Full output path, not necessary. By default, write to current directory." << endl;
+       	cout << "\t<path>                    Full output path, not necessary. By default, write to current directory." << endl;
         cout << "\t<filename>                Vtk output file name" << endl;
         cout << "\t<format>                  Sparse matrix format. Choose between \"-csr\",\"-ellp\" and \"-coo\"." << endl;
         cout << "\t<threads>                 Threads to parallel SPMV operation." << endl;
@@ -81,15 +83,23 @@ int main(int argc, char **argv) {
             start = omp_get_wtime();
             topos::build_coord(C, Lx, Ly, Nx, Ny);
             end = omp_get_wtime();
-            cout << "\tC:      " << end - start << " sec" << endl;
+            cout << "\tC:      " << end - start << " sec" << end;
+
+            map<int,int> G2L;
 
             start = omp_get_wtime();
-            topoEN = topos::build_topoEN(Nx, Ny, k3, k4, nE);
+            topoEN = topos::build_topoEN(Nx, Ny, k3, k4, nE, 1, Nx - 1, 1, Ny - 1, G2L);
             end = omp_get_wtime();
+
             cout << "\ttopoEN: " << end - start << " sec" << endl;
 
+            // cout << "\nLocalTopoEN:\n" << endl;
+            // localTopoEN.printContainer();
+
+            VariableSizeMeshContainer<int> localTopoEN = topos::toLocalIndexesTopoEN(topoEN,G2L);
+
             start = omp_get_wtime();
-            topoNE = topos::build_reverse_topo(topoEN);
+            topoNE = topos::build_reverse_topo(localTopoEN);
             end = omp_get_wtime();
             cout << "\ttopoNE: " << end - start << " sec" << endl;
 
@@ -172,7 +182,7 @@ int main(int argc, char **argv) {
             if (!type) draw_grid(Nx - 1, Ny - 1, k3, k4);
         }
         else if (!strcmp(argv[argc-3], "--solver")){
-            
+
             topoEN.clear();
             topoNE.clear();
             topoSN.clear();

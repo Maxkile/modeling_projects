@@ -56,7 +56,7 @@ int solveFromTopoNN(VariableSizeMeshContainer<int>& topoNN, const char* type_mat
 
     fout.open("decision.txt");
     std::cout << "Writing decision to file..." << std::endl;
-    
+
     for (size_t i = 0; i < x.size(); i++)
     {
         fout << x[i] << endl;

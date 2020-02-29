@@ -1,6 +1,7 @@
 #pragma once
 #include "stdafx.hpp"
 
+#include <map>
 #include "FixedSizeMeshContainer.hpp"
 #include "VariableSizeMeshContainer.hpp"
 #include <omp.h>
@@ -13,79 +14,237 @@ namespace topos
     void build_coord(FixedSizeMeshContainer<T>& C, int Lx, int Ly, int Nx, int Ny){
         vector<T> temp;
 
-        for (int i = 0; i < Ny; i++) {
-            for (int j = 0; j < Nx; j++) {
+        for (int i = 0; i < Ny; i++)
+        {
+            for (int j = 0; j < Nx; j++)
+            {
                 temp.push_back(static_cast<T>((Lx / (Nx - 1)) * j));
                 temp.push_back(static_cast<T>((Ly / (Ny - 1)) * j));
             }
         }
 		C.add(temp);
-		temp.clear();
     }
-    
+
+    //DEPRECATED
     // topoEN
-    VariableSizeMeshContainer<int> build_topoEN(int Nx, int Ny, int k3, int k4, int nE){
+    // VariableSizeMeshContainer<int> build_topoEN_(int Nx, int Ny, int k3, int k4, int nE){
+    //     vector<int> BlockSize;
+    //     vector<int> temp;
+    //     VariableSizeMeshContainer<int> topoEN(temp, BlockSize);
+
+    //     bool figure = k3 > 0 ? false : true; // 0 - triangle, 1 - square
+    //     int count_figure = figure ? k4 : k3;
+    //     int EN_i = 0;
+    //     int temp_nE = nE;
+
+    //     while (temp_nE>0) {
+    //         if (!figure) {
+    //             temp.push_back(EN_i);
+    //             temp.push_back(EN_i+1);
+    //             temp.push_back(EN_i+Nx);
+
+    //             BlockSize.push_back(3);
+
+
+    //             temp.push_back(EN_i+1);
+    //             temp.push_back(EN_i+1+Nx);
+    //             temp.push_back(EN_i+Nx);
+
+    //             BlockSize.push_back(3);
+
+
+    //             temp_nE-=2;
+    //         }
+    //         else 
+    //         {
+    //             temp.push_back(EN_i);
+    //             temp.push_back(EN_i+1);
+    //             temp.push_back(EN_i+1+Nx);
+    //             temp.push_back(EN_i+Nx);
+                
+    //             BlockSize.push_back(4);
+
+    //             temp_nE--;
+    //         }
+    //         count_figure--;
+    //         if (count_figure == 0) {
+    //             figure = !figure;
+    //             count_figure = figure ? k4 : k3;
+    //             if (count_figure == 0) {
+    //                 figure = !figure;
+    //                 count_figure = figure ? k4 : k3;
+    //             }
+    //         }
+    //         EN_i++;
+    //         if (EN_i % Nx == Nx - 1)
+    //             EN_i++;
+    //     }
+
+    //     topoEN.add(temp, BlockSize);
+    //     BlockSize.clear();
+    //     temp.clear();
+
+    //     temp.clear();
+    //     BlockSize.clear();
+
+    //     return topoEN;
+    // }
+
+
+    int computeMeshFiguresNumberLeft(int figCount1, int figCount2, int skippedElemsCount, int curMeshFigureStructure)//defines how many triangles and squares left in mesh after skipping elements
+    {
+        int elemsLeft = skippedElemsCount > curMeshFigureStructure ? (figCount1 + figCount2) - ((skippedElemsCount - curMeshFigureStructure) % (figCount1 + figCount2)) : (figCount1 + figCount2) - curMeshFigureStructure;
+
+        //curMeshFigureStructure - left figures to put on mesh till current time 
+        //consider curMeshFigureStructure is ALWAYS <= figCount1 + figCount2
+
+        if (skippedElemsCount > curMeshFigureStructure)
+        {
+            elemsLeft = (figCount1 + figCount2) - ((skippedElemsCount - curMeshFigureStructure) % (figCount1 + figCount2));
+        }
+        else if (skippedElemsCount == curMeshFigureStructure)
+        {
+            elemsLeft = (figCount1 + figCount2) - (skippedElemsCount - curMeshFigureStructure);
+        }
+        else
+        {
+            elemsLeft = curMeshFigureStructure - skippedElemsCount;
+        }
+
+        return elemsLeft;
+    }
+
+
+    void GlobalIndexes(map<int,int>& G2L, vector<int>& global)
+    {
+        global.clear();
+
+        for(map<int,int>::iterator map_iter = G2L.begin(); map_iter != G2L.end(); ++map_iter)//forming global
+        {
+            global.push_back(map_iter->first);
+        }
+    }
+
+
+    void getLocalIndexes(map<int,int>& G2L, vector<int>& local)
+    {
+        local.clear();
+
+        for(map<int,int>::iterator map_iter = G2L.begin(); map_iter != G2L.end(); ++map_iter)//forming local
+        {
+            local.push_back(map_iter->second);
+        }
+    }
+
+    VariableSizeMeshContainer<int> toLocalIndexesTopoEN(VariableSizeMeshContainer<int>& originEN, map<int,int>& G2L)
+    {
+        
+        vector<int> BlockSize;
+        vector<int> temp;
+        VariableSizeMeshContainer<int> local(temp,BlockSize);
+
+        for(size_t i = 0; i < originEN.getBlockNumber(); ++i)
+        {
+            size_t blockSize = originEN.getBlockSize(i);
+
+            for(size_t j = 0; j < blockSize; ++j)
+            {
+                temp.push_back(G2L[originEN[i][j]]);
+            }
+            BlockSize.push_back(blockSize);
+        }
+
+        local.add(temp,BlockSize);
+
+        return local;
+    }
+
+
+    //topoEN
+    // also L2G and G2L
+    VariableSizeMeshContainer<int> build_topoEN(int Nx, int Ny, int k3, int k4, int nE, int beg_i, int end_i, int beg_j, int end_j, map<int,int>& G2L){
+        
         vector<int> BlockSize;
         vector<int> temp;
         VariableSizeMeshContainer<int> topoEN(temp, BlockSize);
 
-        bool figure = k3 > 0 ? false : true; // 0 - triangle, 1 - square
-        int count_figure = figure ? k4 : k3;
-        int EN_i = 0;
-        int temp_nE = nE;
+        if ((beg_i > Nx) || (end_i >= Nx) || (beg_j > Ny) || (end_j >= Ny) || (end_i <= 0) || (end_i <= 0) || (end_i <= 0) || (end_i <= 0))
+        {
+            cerr << "Wrong submesh parameters!" << endl;
+            return topoEN;
+        }
 
-        while (temp_nE>0) {
-            if (!figure) {
-                temp.push_back(EN_i);
-                temp.push_back(EN_i+1);
-                temp.push_back(EN_i+Nx);
+        int elementsSkipped = beg_j == 0 ? Nx * beg_j + beg_i : Nx * beg_j + beg_i - 1;//total number of elements is k3 + k4. So two triangles is one element itself
 
-                BlockSize.push_back(3);
+        int meshFigureStructureCur = computeMeshFiguresNumberLeft(k3,k4,elementsSkipped,0);
+       
+        int local_i = 0;
+        int cur_i = beg_i;
+        int cur_j = beg_j;
+        
+        G2L.clear();
 
-
-                temp.push_back(EN_i+1);
-                temp.push_back(EN_i+1+Nx);
-                temp.push_back(EN_i+Nx);
-
-                BlockSize.push_back(3);
-
-
-                temp_nE-=2;
-            }
-            else 
+        while(cur_j < end_j)
+        {
+            while(cur_i < end_i)
             {
-                temp.push_back(EN_i);
-                temp.push_back(EN_i+1);
-                temp.push_back(EN_i+1+Nx);
-                temp.push_back(EN_i+Nx);
-                
-                BlockSize.push_back(4);
+                G2L.insert(pair<int,int>(Nx * cur_j + cur_i, local_i));
 
-                temp_nE--;
-            }
-            count_figure--;
-            if (count_figure == 0) {
-                figure = !figure;
-                count_figure = figure ? k4 : k3;
-                if (count_figure == 0) {
-                    figure = !figure;
-                    count_figure = figure ? k4 : k3;
+                if (meshFigureStructureCur > k4)//triangle
+                {
+                    temp.push_back(Nx * cur_j + cur_i);
+                    temp.push_back(Nx * cur_j + cur_i + 1);
+                    temp.push_back(Nx * (cur_j + 1) + cur_i);
+
+                    BlockSize.push_back(3);
+
+                    temp.push_back(Nx * cur_j + cur_i + 1);
+                    temp.push_back(Nx * (cur_j + 1) + cur_i + 1);
+                    temp.push_back(Nx * (cur_j + 1) + cur_i);
+                    BlockSize.push_back(3);                    
                 }
+                else if (meshFigureStructureCur <= k4)//square
+                {
+                    temp.push_back(Nx * cur_j + cur_i);
+                    temp.push_back(Nx * cur_j + cur_i + 1);
+                    temp.push_back(Nx * (cur_j + 1) + cur_i + 1);
+                    temp.push_back(Nx * (cur_j + 1) + cur_i);
+
+                    BlockSize.push_back(4);
+                }
+
+                meshFigureStructureCur--; 
+                if (meshFigureStructureCur == 0)
+                {
+                    meshFigureStructureCur = k3 + k4;
+                } 
+
+                cur_i++;
+                local_i++;
             }
-            EN_i++;
-            if (EN_i % Nx == Nx - 1)
-                EN_i++;
+
+            elementsSkipped = (Nx - (cur_i + 1)) + beg_i;//'+1' as we turn index into number
+            meshFigureStructureCur = computeMeshFiguresNumberLeft(k3, k4, elementsSkipped,meshFigureStructureCur);
+                
+            //changing y coord
+            G2L.insert(pair<int,int>(Nx * cur_j + cur_i, local_i));
+
+            local_i++;
+            cur_i = beg_i;
+            cur_j++;
+
+        }
+
+        for(cur_i = beg_i; cur_i <= end_i; ++cur_i,++local_i)//last y, we haven't visited it yet, but have to put in map
+        {
+            G2L.insert(pair<int,int>(Nx * end_j + cur_i, local_i));
         }
 
         topoEN.add(temp, BlockSize);
-        BlockSize.clear();
-        temp.clear();
-
-        temp.clear();
-        BlockSize.clear();
-
         return topoEN;
     }
+
+
 
     //topoSN
     VariableSizeMeshContainer<int> build_topoSN(int Nx, int Ny, int k3, int k4){
@@ -121,8 +280,6 @@ namespace topos
             }
         }
 		topoSN.add(temp, BlockSize);
-		temp.clear();
-		BlockSize.clear();
 
         return topoSN;
     } 
@@ -226,8 +383,7 @@ namespace topos
             BlockSize.push_back(3);
         }
         topoBSN.add(temp, BlockSize);
-        temp.clear();
-        BlockSize.clear();
+
         return topoBSN;
     }
 
@@ -254,8 +410,7 @@ namespace topos
         }
 
         topoBNS.add(temp, BlockSize);
-        temp.clear();        
-        BlockSize.clear();
+
         return topoBNS;
     }
 
