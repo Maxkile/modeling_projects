@@ -27,7 +27,7 @@ public:
 	virtual void setValues(const std::vector<T>&) = 0;
 	virtual size_t getValuesSize() const = 0;
 	virtual std::vector<T> getDiagonal() const = 0;
-	
+
 	
 	inline void printA() const
 	{

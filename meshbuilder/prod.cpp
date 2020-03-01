@@ -23,6 +23,9 @@ int main(int argc, char **argv) {
     int Lx, Ly;
     FixedSizeMeshContainer<double> C;//coordinates
     VariableSizeMeshContainer<int> topoEN;
+    
+    VariableSizeMeshContainer<int> localTopoEN;
+
     VariableSizeMeshContainer<int> topoNE;
     VariableSizeMeshContainer<int> topoSN;
     VariableSizeMeshContainer<int> topoNS;
@@ -83,20 +86,23 @@ int main(int argc, char **argv) {
             start = omp_get_wtime();
             topos::build_coord(C, Lx, Ly, Nx, Ny);
             end = omp_get_wtime();
-            cout << "\tC:      " << end - start << " sec" << end;
+            cout << "\tC:      " << end - start << " sec" << endl;
 
             map<int,int> G2L;
+
+            vector<int> submeshIndexes_0_0 = topos::decomposeMesh(Nx, Ny, 2, 2, 0, 0);
+            vector<int> submeshIndexes_0_1 = topos::decomposeMesh(Nx, Ny, 2, 2, 0, 1);
+            vector<int> submeshIndexes_1_0 = topos::decomposeMesh(Nx, Ny, 2, 2, 1, 0);
+            vector<int> submeshIndexes_1_1 = topos::decomposeMesh(Nx, Ny, 2, 2, 1, 1);
+
+            FixedSizeMeshContainer<int> submeshIndexes = topos::decomposeMesh(Nx,Ny,2,2);
 
             start = omp_get_wtime();
             topoEN = topos::build_topoEN(Nx, Ny, k3, k4, nE, 1, Nx - 1, 1, Ny - 1, G2L);
             end = omp_get_wtime();
-
             cout << "\ttopoEN: " << end - start << " sec" << endl;
 
-            // cout << "\nLocalTopoEN:\n" << endl;
-            // localTopoEN.printContainer();
-
-            VariableSizeMeshContainer<int> localTopoEN = topos::toLocalIndexesTopoEN(topoEN,G2L);
+            localTopoEN = topos::toLocalIndexesTopoEN(topoEN,G2L);
 
             start = omp_get_wtime();
             topoNE = topos::build_reverse_topo(localTopoEN);
@@ -170,6 +176,8 @@ int main(int argc, char **argv) {
             C.printContainer();
             cout << "\nTopoEN:\n" << endl;
             topoEN.printContainer();
+            cout << "\nTopoEN(local):\n" << endl;
+            localTopoEN.printContainer();
             cout << "\nTopoNE:\n" << endl;
             topoNE.printContainer();
             cout << "\nTopoSN:\n" << endl;

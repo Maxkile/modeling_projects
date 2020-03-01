@@ -32,6 +32,9 @@ public:
     //Add another GridContainer elements to our container
     bool add(const FixedSizeMeshContainer<T>& extra);
 
+    void reserve(size_t);
+
+    void shrink_to_fit();
 
     FixedSizeMeshContainer& operator=(const FixedSizeMeshContainer<T>& target);
 
@@ -166,6 +169,19 @@ bool FixedSizeMeshContainer<T>::add(const FixedSizeMeshContainer<T>& extra)
         }
         return true;
     }
+}
+
+template <typename T>
+void FixedSizeMeshContainer<T>::reserve(size_t size)
+{
+    V.reserve(size);
+}
+
+
+template <typename T>
+void FixedSizeMeshContainer<T>::shrink_to_fit()
+{
+    V.shrink_to_fit();
 }
 
 

@@ -25,72 +25,6 @@ namespace topos
 		C.add(temp);
     }
 
-    //DEPRECATED
-    // topoEN
-    // VariableSizeMeshContainer<int> build_topoEN_(int Nx, int Ny, int k3, int k4, int nE){
-    //     vector<int> BlockSize;
-    //     vector<int> temp;
-    //     VariableSizeMeshContainer<int> topoEN(temp, BlockSize);
-
-    //     bool figure = k3 > 0 ? false : true; // 0 - triangle, 1 - square
-    //     int count_figure = figure ? k4 : k3;
-    //     int EN_i = 0;
-    //     int temp_nE = nE;
-
-    //     while (temp_nE>0) {
-    //         if (!figure) {
-    //             temp.push_back(EN_i);
-    //             temp.push_back(EN_i+1);
-    //             temp.push_back(EN_i+Nx);
-
-    //             BlockSize.push_back(3);
-
-
-    //             temp.push_back(EN_i+1);
-    //             temp.push_back(EN_i+1+Nx);
-    //             temp.push_back(EN_i+Nx);
-
-    //             BlockSize.push_back(3);
-
-
-    //             temp_nE-=2;
-    //         }
-    //         else 
-    //         {
-    //             temp.push_back(EN_i);
-    //             temp.push_back(EN_i+1);
-    //             temp.push_back(EN_i+1+Nx);
-    //             temp.push_back(EN_i+Nx);
-                
-    //             BlockSize.push_back(4);
-
-    //             temp_nE--;
-    //         }
-    //         count_figure--;
-    //         if (count_figure == 0) {
-    //             figure = !figure;
-    //             count_figure = figure ? k4 : k3;
-    //             if (count_figure == 0) {
-    //                 figure = !figure;
-    //                 count_figure = figure ? k4 : k3;
-    //             }
-    //         }
-    //         EN_i++;
-    //         if (EN_i % Nx == Nx - 1)
-    //             EN_i++;
-    //     }
-
-    //     topoEN.add(temp, BlockSize);
-    //     BlockSize.clear();
-    //     temp.clear();
-
-    //     temp.clear();
-    //     BlockSize.clear();
-
-    //     return topoEN;
-    // }
-
-
     int computeMeshFiguresNumberLeft(int figCount1, int figCount2, int skippedElemsCount, int curMeshFigureStructure)//defines how many triangles and squares left in mesh after skipping elements
     {
         int elemsLeft = skippedElemsCount > curMeshFigureStructure ? (figCount1 + figCount2) - ((skippedElemsCount - curMeshFigureStructure) % (figCount1 + figCount2)) : (figCount1 + figCount2) - curMeshFigureStructure;
@@ -161,7 +95,7 @@ namespace topos
 
 
     //topoEN
-    // also L2G and G2L
+    //also generates G2L
     VariableSizeMeshContainer<int> build_topoEN(int Nx, int Ny, int k3, int k4, int nE, int beg_i, int end_i, int beg_j, int end_j, map<int,int>& G2L){
         
         vector<int> BlockSize;
@@ -470,4 +404,88 @@ namespace topos
 
         return topoNN;
     }
+
+
+    // Mesh decomposing(only decart meshes are supported yet)
+    vector<int> decomposeMesh(int Nx, int Ny, int Px, int Py, int px, int py){
+
+        vector<int> coord(4);// ibeg, iend; jbeg, jend indexes
+
+        if ((px >= Px) || (py >= Py) || (px < 0) || (py < 0))
+        {
+            cerr << "Decompose error: Wrong \'px\' or \'py\' values!" << endl;
+            return coord;
+        }
+        else if ((px >= Px) || (py >= Py))
+        {
+            cerr << "Decompose error: Part index is more than part number!" << endl;
+            return coord;
+        }
+        else if ((Px > Nx - 1) || (Py > Ny - 1))
+        {
+            cerr << "Decompose error: Number of parts is more than elements themselves!" << endl;
+            return coord;   
+        }
+        else
+        {
+            int xPartSize = Nx / Px;
+            int yPartSize = Ny / Py;
+
+            int xLeft = Nx % Px;
+            int yLeft = Ny % Py;
+
+            if ((px < xLeft) && (py < yLeft))//add left element to coord[x] and coord[y]
+            {
+                coord[0] = xPartSize * px + px; 
+                coord[1] = xPartSize * (px + 1) + px + 1;
+                coord[2] = yPartSize * py + py;
+                coord[3] = yPartSize * (py + 1) + py + 1;
+            }
+            
+            else if (py < yLeft)//add left element to coord[y]
+            {
+                coord[0] = xPartSize * px + xLeft; 
+                coord[1] = xPartSize * (px + 1) + xLeft;
+                coord[2] = yPartSize * py + py;
+                coord[3] = yPartSize * (py + 1) + py + 1;
+            }
+            else if (px < xLeft)//add left element to coord[x]
+            {
+                coord[0] = xPartSize * px + px; 
+                coord[1] = xPartSize * (px + 1) + px + 1;
+                coord[2] = yPartSize * py + yLeft;
+                coord[3] = yPartSize * (py + 1) + yLeft;
+            }
+            else//no extra element added
+            {
+                coord[0] = xPartSize * px + xLeft; 
+                coord[1] = xPartSize * (px + 1) + xLeft;
+                coord[2] = yPartSize * py + yLeft;
+                coord[3] = yPartSize * (py + 1) + yLeft;
+            }
+
+            return coord;
+
+        }
+    }
+
+    // Mesh decomposing(only decart meshes are supported yet). Get all "ibeg, iend; jbeg, jend" for all indexes [0,Px - 1],[0, Py - 1]
+    FixedSizeMeshContainer<int> decomposeMesh(int Nx, int Ny, int Px, int Py){
+
+        FixedSizeMeshContainer<int> coords(4);
+        coords.reserve(4 * Px * Py);
+
+        for(int px = 0; px < Px; ++px)
+        {
+            for(int py = 0; py < Py; ++py)
+            {
+                coords.add(decomposeMesh(Nx, Ny, Px, Py, px, py));
+            }
+        }
+        coords.printContainer();
+
+        return coords;
+    }
+
+
 }
