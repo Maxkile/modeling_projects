@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <iomanip>
 #include <cmath>
+
 #include "platformDependencies.hpp"
 #include "VariableSizeMeshContainer.hpp"
 

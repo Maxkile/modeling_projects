@@ -2,13 +2,17 @@
 #include "stdafx.hpp"
 
 #include <map>
+#include <omp.h>
+
 #include "FixedSizeMeshContainer.hpp"
 #include "VariableSizeMeshContainer.hpp"
-#include <omp.h>
+#include "decomposition.hpp"
 
 namespace topos
 {
-	
+	constexpr int TRIANGLE_NODES = 3;
+    constexpr int SQUARE_NODES = 4;
+
     //coords
     template<typename T>
     void build_coord(FixedSizeMeshContainer<T>& C, int Lx, int Ly, int Nx, int Ny){
@@ -49,30 +53,8 @@ namespace topos
     }
 
 
-    void GlobalIndexes(map<int,int>& G2L, vector<int>& global)
-    {
-        global.clear();
-
-        for(map<int,int>::iterator map_iter = G2L.begin(); map_iter != G2L.end(); ++map_iter)//forming global
-        {
-            global.push_back(map_iter->first);
-        }
-    }
-
-
-    void getLocalIndexes(map<int,int>& G2L, vector<int>& local)
-    {
-        local.clear();
-
-        for(map<int,int>::iterator map_iter = G2L.begin(); map_iter != G2L.end(); ++map_iter)//forming local
-        {
-            local.push_back(map_iter->second);
-        }
-    }
-
     VariableSizeMeshContainer<int> toLocalIndexesTopoEN(VariableSizeMeshContainer<int>& originEN, map<int,int>& G2L)
     {
-        
         vector<int> BlockSize;
         vector<int> temp;
         VariableSizeMeshContainer<int> local(temp,BlockSize);
@@ -93,49 +75,55 @@ namespace topos
         return local;
     }
 
-
     //topoEN
     //also generates G2L
-    VariableSizeMeshContainer<int> build_topoEN(int Nx, int Ny, int k3, int k4, int nE, int beg_i, int end_i, int beg_j, int end_j, map<int,int>& G2L){
+    VariableSizeMeshContainer<int> build_topoEN(int Nx, int Ny, int k3, int k4, int beg_i, int end_i, int beg_j, int end_j, int px, int py, map<int,int>& G2L, vector<int>& part){//Px, px - current submesh params
         
+        G2L.clear();
+        part.clear();
+
         vector<int> BlockSize;
         vector<int> temp;
         VariableSizeMeshContainer<int> topoEN(temp, BlockSize);
 
-        if ((beg_i > Nx) || (end_i >= Nx) || (beg_j > Ny) || (end_j >= Ny) || (end_i <= 0) || (end_i <= 0) || (end_i <= 0) || (end_i <= 0))
+        if ((beg_i > Nx) || (end_i > Nx) || (beg_j > Ny) || (end_j > Ny) || (end_i <= 0) || (end_i <= 0) || (end_i <= 0) || (end_i <= 0))
         {
             cerr << "Wrong submesh parameters!" << endl;
             return topoEN;
         }
 
-        int elementsSkipped = beg_j == 0 ? Nx * beg_j + beg_i : Nx * beg_j + beg_i - 1;//total number of elements is k3 + k4. So two triangles is one element itself
-
-        int meshFigureStructureCur = computeMeshFiguresNumberLeft(k3,k4,elementsSkipped,0);
+        //including interface elements
+        // beg_i = (beg_i > 0) ? beg_i - 1 : beg_i;
+        // end_i = (end_i < Nx - 1) ? end_i + 1 : end_i;
+        // beg_j = (beg_j > 0) ? beg_j - 1 : beg_j;
+        // end_j = (end_j < Ny - 1) ? end_j + 1 : end_j;
+        
+        int fullElementsSkipped = (Nx - 1) * beg_j + beg_i;//total number of elements is k3 + k4. So two triangles is one element itself
+        cout << "Elements skipped: " << fullElementsSkipped << endl; 
+        int meshFigureStructureCur = computeMeshFiguresNumberLeft(k3,k4,fullElementsSkipped,0);
        
         int local_i = 0;
         int cur_i = beg_i;
         int cur_j = beg_j;
         
-        G2L.clear();
-
         while(cur_j < end_j)
         {
             while(cur_i < end_i)
             {
                 G2L.insert(pair<int,int>(Nx * cur_j + cur_i, local_i));
+                // part.push_back(Px * py + px);
 
                 if (meshFigureStructureCur > k4)//triangle
                 {
                     temp.push_back(Nx * cur_j + cur_i);
                     temp.push_back(Nx * cur_j + cur_i + 1);
                     temp.push_back(Nx * (cur_j + 1) + cur_i);
-
-                    BlockSize.push_back(3);
+                    BlockSize.push_back(TRIANGLE_NODES);
 
                     temp.push_back(Nx * cur_j + cur_i + 1);
                     temp.push_back(Nx * (cur_j + 1) + cur_i + 1);
                     temp.push_back(Nx * (cur_j + 1) + cur_i);
-                    BlockSize.push_back(3);                    
+                    BlockSize.push_back(TRIANGLE_NODES);                    
                 }
                 else if (meshFigureStructureCur <= k4)//square
                 {
@@ -144,7 +132,7 @@ namespace topos
                     temp.push_back(Nx * (cur_j + 1) + cur_i + 1);
                     temp.push_back(Nx * (cur_j + 1) + cur_i);
 
-                    BlockSize.push_back(4);
+                    BlockSize.push_back(SQUARE_NODES);
                 }
 
                 meshFigureStructureCur--; 
@@ -157,11 +145,13 @@ namespace topos
                 local_i++;
             }
 
-            elementsSkipped = (Nx - (cur_i + 1)) + beg_i;//'+1' as we turn index into number
-            meshFigureStructureCur = computeMeshFiguresNumberLeft(k3, k4, elementsSkipped,meshFigureStructureCur);
+            fullElementsSkipped = (Nx - (cur_i + 1)) + beg_i;
+            cout << "Elements skipped: " << fullElementsSkipped << endl; 
+            meshFigureStructureCur = computeMeshFiguresNumberLeft(k3, k4, fullElementsSkipped,meshFigureStructureCur);
                 
             //changing y coord
             G2L.insert(pair<int,int>(Nx * cur_j + cur_i, local_i));
+            // part.push_back(px == (Px - 1) ? Px * py + px : Px * py + px + 1);//right, may be last
 
             local_i++;
             cur_i = beg_i;
@@ -172,6 +162,7 @@ namespace topos
         for(cur_i = beg_i; cur_i <= end_i; ++cur_i,++local_i)//last y, we haven't visited it yet, but have to put in map
         {
             G2L.insert(pair<int,int>(Nx * end_j + cur_i, local_i));
+            // part.push_back(py == (Py - 1) ? Px * (py + 1) + px : Px * (py + 1) + px + 1);
         }
 
         topoEN.add(temp, BlockSize);
@@ -404,88 +395,5 @@ namespace topos
 
         return topoNN;
     }
-
-
-    // Mesh decomposing(only decart meshes are supported yet)
-    vector<int> decomposeMesh(int Nx, int Ny, int Px, int Py, int px, int py){
-
-        vector<int> coord(4);// ibeg, iend; jbeg, jend indexes
-
-        if ((px >= Px) || (py >= Py) || (px < 0) || (py < 0))
-        {
-            cerr << "Decompose error: Wrong \'px\' or \'py\' values!" << endl;
-            return coord;
-        }
-        else if ((px >= Px) || (py >= Py))
-        {
-            cerr << "Decompose error: Part index is more than part number!" << endl;
-            return coord;
-        }
-        else if ((Px > Nx - 1) || (Py > Ny - 1))
-        {
-            cerr << "Decompose error: Number of parts is more than elements themselves!" << endl;
-            return coord;   
-        }
-        else
-        {
-            int xPartSize = Nx / Px;
-            int yPartSize = Ny / Py;
-
-            int xLeft = Nx % Px;
-            int yLeft = Ny % Py;
-
-            if ((px < xLeft) && (py < yLeft))//add left element to coord[x] and coord[y]
-            {
-                coord[0] = xPartSize * px + px; 
-                coord[1] = xPartSize * (px + 1) + px + 1;
-                coord[2] = yPartSize * py + py;
-                coord[3] = yPartSize * (py + 1) + py + 1;
-            }
-            
-            else if (py < yLeft)//add left element to coord[y]
-            {
-                coord[0] = xPartSize * px + xLeft; 
-                coord[1] = xPartSize * (px + 1) + xLeft;
-                coord[2] = yPartSize * py + py;
-                coord[3] = yPartSize * (py + 1) + py + 1;
-            }
-            else if (px < xLeft)//add left element to coord[x]
-            {
-                coord[0] = xPartSize * px + px; 
-                coord[1] = xPartSize * (px + 1) + px + 1;
-                coord[2] = yPartSize * py + yLeft;
-                coord[3] = yPartSize * (py + 1) + yLeft;
-            }
-            else//no extra element added
-            {
-                coord[0] = xPartSize * px + xLeft; 
-                coord[1] = xPartSize * (px + 1) + xLeft;
-                coord[2] = yPartSize * py + yLeft;
-                coord[3] = yPartSize * (py + 1) + yLeft;
-            }
-
-            return coord;
-
-        }
-    }
-
-    // Mesh decomposing(only decart meshes are supported yet). Get all "ibeg, iend; jbeg, jend" for all indexes [0,Px - 1],[0, Py - 1]
-    FixedSizeMeshContainer<int> decomposeMesh(int Nx, int Ny, int Px, int Py){
-
-        FixedSizeMeshContainer<int> coords(4);
-        coords.reserve(4 * Px * Py);
-
-        for(int px = 0; px < Px; ++px)
-        {
-            for(int py = 0; py < Py; ++py)
-            {
-                coords.add(decomposeMesh(Nx, Ny, Px, Py, px, py));
-            }
-        }
-        coords.printContainer();
-
-        return coords;
-    }
-
 
 }
