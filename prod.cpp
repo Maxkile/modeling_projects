@@ -16,14 +16,14 @@
 using namespace std;
 
 int main(int argc, char **argv) {
-
+    
     int Nx, Ny, k3, k4;
     int Lx, Ly;
     int Px, Py;
 
     FixedSizeMeshContainer<double> C;//coordinates
     VariableSizeMeshContainer<int> topoEN;
-    
+
     VariableSizeMeshContainer<int> localTopoEN;
 
     VariableSizeMeshContainer<int> topoNE;
@@ -48,7 +48,7 @@ int main(int argc, char **argv) {
         cout << "\t--solver                  An example of solving the  Ax = b using the conjugate gradient method " << endl;
         cout << "Options:" << endl;
         cout << "\t<Lx>                      Mesh X length" << endl;
-        cout << "\t<Ly>                      Mesh Y length" << endl;                
+        cout << "\t<Ly>                      Mesh Y length" << endl;
         cout << "\t<Nx>                      Number of X nodes" << endl;
         cout << "\t<Ny>                      Number of Y nodes" << endl;
         cout << "\t<k3>                      Number of squares in sequence" << endl;

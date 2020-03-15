@@ -9,3 +9,5 @@ out.vtk
 mesh
 test_vtk
 prod
+.cmake*
+build

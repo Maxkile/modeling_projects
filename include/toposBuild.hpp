@@ -77,7 +77,7 @@ namespace topos
 
     //topoEN
     //also generates G2L
-    VariableSizeMeshContainer<int> build_topoEN(int Nx, int Ny, int k3, int k4, int beg_i, int end_i, int beg_j, int end_j, int px, int py, map<int,int>& G2L, vector<int>& part){//Px, px - current submesh params
+    VariableSizeMeshContainer<int> build_topoEN(int Nx, int Ny, int k3, int k4, int beg_i, int end_i, int beg_j, int end_j, map<int,int>& G2L, vector<int>& part){//Px, px - current submesh params
         
         G2L.clear();
         part.clear();

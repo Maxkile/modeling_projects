@@ -54,7 +54,7 @@ public:
 
     void inline printContainer(ostream& out = cout) const
     {
-        for(size_t i = 0;i<getBlockNumber();++i) 
+        for(size_t i = 0;i<getBlockNumber();++i)
         {
             for(size_t j = 0;j < blockSize;++j)
             {
@@ -75,7 +75,7 @@ public:
     void inline printContainer(ofstream& out) const
     {
 
-        for(size_t i = 0;i<getBlockNumber();++i) 
+        for(size_t i = 0;i<getBlockNumber();++i)
         {
             for(size_t j = 0;j < blockSize;++j)
             {
@@ -135,11 +135,11 @@ bool FixedSizeMeshContainer<T>::add(const vector<T>& extra)
     {
         cerr << "Error: Vector size must be a multiple of " <<  blockSize << endl;
         return false;
-    } 
+    }
     else
     {
         V.reserve(extra.size());
-        for(typename vector<T>::const_iterator it = extra.begin(); it != extra.end();++it)  
+        for(typename vector<T>::const_iterator it = extra.begin(); it != extra.end();++it)
         {
             V.push_back(*it);
         }
@@ -191,7 +191,7 @@ FixedSizeMeshContainer<T>& FixedSizeMeshContainer<T>::operator=(const FixedSizeM
     blockSize = extra.blockSize;
     V.clear();
     V.resize(extra.blockSize*extra.BlocksNumber);
-    V = extra.V;   
+    V = extra.V;
     return (*this);
 }
 
@@ -218,7 +218,7 @@ T* FixedSizeMeshContainer<T>::operator[](size_t i)
     {
         cerr << "Error: Index out of bounds" << endl;
         return nullptr;
-    } 
+    }
     else
     {
         return &V[0] + blockSize*i;
@@ -232,7 +232,7 @@ const T* FixedSizeMeshContainer<T>::operator[](size_t i) const
     {
         cerr << "Error: Index out of bounds" << endl;
         return nullptr;
-    } 
+    }
     else
     {
         return &V[0] + blockSize*i;
