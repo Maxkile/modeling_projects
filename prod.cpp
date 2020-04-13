@@ -38,7 +38,7 @@ int main(int argc, char **argv) {
     if ((argc == 1) || !((argc == 5) || (argc == 11) || (argc == 12) || (argc == 7) || (argc == 13)) || (strcmp(argv[argc-1], "--print") && strcmp(argv[argc-1], "--out") && strcmp(argv[argc-2], "--out") && strcmp(argv[argc-2], "--vtk") && strcmp(argv[argc-3], "--solver"))){
 
         cout << "Mesh builder and solver v0.2 beta" << endl;
-        cout << "Usage:  --gen <Lx> <Ly> <Nx> <Ny> <k3> <k4> | --file \n\t--print | --out (<path>) | --vtk <filename> | --solver <format> <threads>" <<endl;
+        cout << "Usage:  --gen <Lx> <Ly> <Nx> <Ny> <k3> <k4> <Px> <Py>| --file \n\t--print | --out (<path>) | --vtk <filename> | --solver <format> <threads>" <<endl;
         cout << "Commands:" << endl;
         cout << "\t--gen                     Generate mesh" << endl;
         cout << "\t--file                    Read mesh from file(in current directory)" << endl;
@@ -99,34 +99,27 @@ int main(int argc, char **argv) {
             cout << "\tC:      " << end - start << " sec" << endl;
 
             map<int,int> G2L;
+            vector<int> L2G;
             vector<int> part;
+            vector<pair<size_t,int>> haloes;
+            vector<pair<size_t,int>> interfaces;
 
-            FixedSizeMeshContainer<int> submeshes = decomp::decomposeMesh(Nx,Ny,Px,Py);
-
-            // vector<int> submeshIndexes_0_0 = decomp::decomposeMesh(Nx, Ny, Px, Py, 0, 0);
-            // std::cout << submeshIndexes_0_0[0] << submeshIndexes_0_0[1] << submeshIndexes_0_0[2] << submeshIndexes_0_0[3] << endl;
-            // vector<int> submeshIndexes_0_1 = decomp::decomposeMesh(Nx, Ny, Px, Py, 0, 1);
-            // std::cout << submeshIndexes_0_1[0] << submeshIndexes_0_1[1] << submeshIndexes_0_1[2] << submeshIndexes_0_1[3] << endl;
-            // vector<int> submeshIndexes_1_0 = decomp::decomposeMesh(Nx, Ny, Px, Py, 1, 0);
-            // std::cout << submeshIndexes_1_0[0] << submeshIndexes_1_0[1] << submeshIndexes_1_0[2] << submeshIndexes_1_0[3] << endl;
-            // vector<int> submeshIndexes_1_1 = decomp::decomposeMesh(Nx, Ny, Px, Py, 1, 1);
-            // std::cout << submeshIndexes_1_1[0] << submeshIndexes_1_1[1] << submeshIndexes_1_1[2] << submeshIndexes_1_1[3] << endl;
-
-            // FixedSizeMeshContainer<int> submeshIndexes = decomp::decomposeMesh(Nx,Ny,2,2);
-
-
-            int px,py;
-
-            px = 2;
-            py = 1;
+            vector<pair<size_t,vector<int>>> submeshes = decomp::decomposeMesh(Nx,Ny,Px,Py);
 
             start = omp_get_wtime();
-            topoEN = topos::build_topoEN(Nx, Ny, k3, k4, submeshes[7][0], submeshes[7][1], submeshes[7][2], submeshes[7][3], px, py, G2L, part);
+            topoEN = topos::build_topoEN(Nx, Ny, k3, k4, 1, submeshes, G2L, L2G, part, haloes, interfaces);
             end = omp_get_wtime();
+
+            for(auto i = part.begin(); i != part.end();++i)
+            {
+                std::cout << *i <<  std::endl;
+            }
 
             cout << "\ttopoEN: " << end - start << " sec" << endl;
 
             localTopoEN = topos::toLocalIndexesTopoEN(topoEN,G2L);
+
+            G2L.clear();
 
             start = omp_get_wtime();
             topoNE = topos::build_reverse_topo(localTopoEN);

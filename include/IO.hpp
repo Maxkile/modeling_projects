@@ -15,14 +15,14 @@ void draw_grid(int Nx, int Ny, int k3, int k4){
 
     cout << "\n";
 
-    for (int i = 0; i < Nx; i++) {
+    for (int i = 0; i < Ny; i++) {
         cout << " ";
         for (int j = 0; j < 8; j++)
             cout << "_";
     }
     cout << "\n";
 
-    for (int cur_line = 0; cur_line < Ny; cur_line++) {
+    for (int cur_line = 0; cur_line < Nx; cur_line++) {
         symb = ' ';
 
         for (int cur_str = 0; cur_str < 4; cur_str++) {
@@ -36,7 +36,7 @@ void draw_grid(int Nx, int Ny, int k3, int k4){
                 cur_number_type = prev_cur_number;
             }
 
-            for (int i = 0; i < Nx; i++) {
+            for (int i = 0; i < Ny; i++) {
                 for (int j = 0; j < 7 - 2 * cur_str; j++)
                     cout << symb;
                 if (type_elem == 0) {

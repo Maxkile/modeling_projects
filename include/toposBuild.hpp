@@ -1,4 +1,4 @@
-#pragma once
+ #pragma once
 #include "stdafx.hpp"
 
 #include <map>
@@ -76,19 +76,38 @@ namespace topos
     }
 
     //topoEN
-    //also generates G2L
-    VariableSizeMeshContainer<int> build_topoEN(int Nx, int Ny, int k3, int k4, int beg_i, int end_i, int beg_j, int end_j, map<int,int>& G2L, vector<int>& part){//Px, px - current submesh params
+    //also generates G2L,L2G,halo's,interfaces
+    VariableSizeMeshContainer<int> build_topoEN(int Nx, int Ny, int k3, int k4, size_t submesh_id, const vector<pair<size_t,vector<int>>>& submeshes, map<int,int>& G2L, vector<int>& L2G, vector<int>& part,vector<pair<size_t,int>>& haloes,vector<pair<size_t,int>>& interfaces){//Px, px - current submesh params
         
         G2L.clear();
+        L2G.clear();
         part.clear();
+        haloes.clear();
+        interfaces.clear();
 
         vector<int> BlockSize;
         vector<int> temp;
         VariableSizeMeshContainer<int> topoEN(temp, BlockSize);
 
+
+        int beg_i = submeshes[submesh_id].second[0];
+        int end_i = submeshes[submesh_id].second[1];
+        int beg_j = submeshes[submesh_id].second[2];
+        int end_j = submeshes[submesh_id].second[3];
+
+        size_t mesh_id;
+
+        double part_time = 0;
+        double start;
+
         if ((beg_i > Nx) || (end_i > Nx) || (beg_j > Ny) || (end_j > Ny) || (end_i <= 0) || (end_i <= 0) || (end_i <= 0) || (end_i <= 0))
         {
             cerr << "Wrong submesh parameters!" << endl;
+            return topoEN;
+        }
+        else if (submesh_id >= submeshes.size())
+        {
+            cerr << "Wrong submesh id!" << endl;
             return topoEN;
         }
 
@@ -98,39 +117,44 @@ namespace topos
         // beg_j = (beg_j > 0) ? beg_j - 1 : beg_j;
         // end_j = (end_j < Ny - 1) ? end_j + 1 : end_j;
         
-        int fullElementsSkipped = (Nx - 1) * beg_j + beg_i;//total number of elements is k3 + k4. So two triangles is one element itself
-        cout << "Elements skipped: " << fullElementsSkipped << endl; 
+        int fullElementsSkipped = (Ny - 1) * beg_i + beg_j;//total number of elements is k3 + k4. So two triangles is one element itself
         int meshFigureStructureCur = computeMeshFiguresNumberLeft(k3,k4,fullElementsSkipped,0);
        
-        int local_i = 0;
+        int local_j = 0;
         int cur_i = beg_i;
         int cur_j = beg_j;
-        
-        while(cur_j < end_j)
+
+        while(cur_i < end_i)
         {
-            while(cur_i < end_i)
+            while(cur_j < end_j)
             {
-                G2L.insert(pair<int,int>(Nx * cur_j + cur_i, local_i));
-                // part.push_back(Px * py + px);
+                G2L.insert(pair<int,int>(Ny * cur_i + cur_j, local_j));
+                L2G.push_back(Ny * cur_i + cur_j);
+
+                //forming part(inner nodes)
+
+                start = omp_get_wtime();
+                part.push_back(submeshes[submesh_id].first);
+                part_time += omp_get_wtime() - start;
 
                 if (meshFigureStructureCur > k4)//triangle
                 {
-                    temp.push_back(Nx * cur_j + cur_i);
-                    temp.push_back(Nx * cur_j + cur_i + 1);
-                    temp.push_back(Nx * (cur_j + 1) + cur_i);
+                    temp.push_back(Ny * cur_i + cur_j);
+                    temp.push_back(Ny * cur_i + cur_j + 1);
+                    temp.push_back(Ny * (cur_i + 1) + cur_j);
                     BlockSize.push_back(TRIANGLE_NODES);
 
-                    temp.push_back(Nx * cur_j + cur_i + 1);
-                    temp.push_back(Nx * (cur_j + 1) + cur_i + 1);
-                    temp.push_back(Nx * (cur_j + 1) + cur_i);
+                    temp.push_back(Ny * cur_i + cur_j + 1);
+                    temp.push_back(Ny * (cur_i + 1) + cur_j + 1);
+                    temp.push_back(Ny * (cur_i + 1) + cur_j);
                     BlockSize.push_back(TRIANGLE_NODES);                    
                 }
                 else if (meshFigureStructureCur <= k4)//square
                 {
-                    temp.push_back(Nx * cur_j + cur_i);
-                    temp.push_back(Nx * cur_j + cur_i + 1);
-                    temp.push_back(Nx * (cur_j + 1) + cur_i + 1);
-                    temp.push_back(Nx * (cur_j + 1) + cur_i);
+                    temp.push_back(Ny * cur_i + cur_j);
+                    temp.push_back(Ny * cur_i + cur_j + 1);
+                    temp.push_back(Ny * (cur_i + 1) + cur_j + 1);
+                    temp.push_back(Ny * (cur_i + 1) + cur_j);
 
                     BlockSize.push_back(SQUARE_NODES);
                 }
@@ -141,29 +165,44 @@ namespace topos
                     meshFigureStructureCur = k3 + k4;
                 } 
 
-                cur_i++;
-                local_i++;
+                cur_j++;
+                local_j++;
             }
 
-            fullElementsSkipped = (Nx - (cur_i + 1)) + beg_i;
-            cout << "Elements skipped: " << fullElementsSkipped << endl; 
+            fullElementsSkipped = (Ny - (cur_j + 1)) + beg_j;
             meshFigureStructureCur = computeMeshFiguresNumberLeft(k3, k4, fullElementsSkipped,meshFigureStructureCur);
                 
             //changing y coord
-            G2L.insert(pair<int,int>(Nx * cur_j + cur_i, local_i));
-            // part.push_back(px == (Px - 1) ? Px * py + px : Px * py + px + 1);//right, may be last
+            G2L.insert(pair<int,int>(Ny * cur_i + cur_j, local_j));
+            L2G.push_back(Ny * cur_i + cur_j);
 
-            local_i++;
-            cur_i = beg_i;
-            cur_j++;
 
+            //forming halo and part
+            mesh_id = decomp::getSubmeshIdByCoords(cur_i,cur_j,submeshes,Nx,Ny);
+            start = omp_get_wtime();
+            part.push_back(mesh_id);
+            part_time += omp_get_wtime() - start;
+            haloes.push_back(std::make_pair(mesh_id,Ny * cur_i + cur_j));
+
+            local_j++;
+            cur_j = beg_j;
+            cur_i++;
         }
 
-        for(cur_i = beg_i; cur_i <= end_i; ++cur_i,++local_i)//last y, we haven't visited it yet, but have to put in map
+        for(cur_j = beg_j; cur_j <= end_j; ++cur_j,++local_j)//last y, we haven't visited it yet, but have to store them too
         {
-            G2L.insert(pair<int,int>(Nx * end_j + cur_i, local_i));
-            // part.push_back(py == (Py - 1) ? Px * (py + 1) + px : Px * (py + 1) + px + 1);
+            G2L.insert(pair<int,int>(Ny * end_i + cur_j, local_j));
+            L2G.push_back(Ny * end_i + cur_j);
+
+            //forming halo and part
+            mesh_id = decomp::getSubmeshIdByCoords(cur_i,cur_j,submeshes,Nx,Ny);
+            start = omp_get_wtime();
+            part.push_back(mesh_id);
+            part_time += omp_get_wtime() - start;
+            haloes.push_back(std::make_pair(mesh_id,Ny * end_i + cur_j));
+
         }
+        std::cout << "Total part forming time: " << part_time << " sec" <<  std::endl;
 
         topoEN.add(temp, BlockSize);
         return topoEN;
@@ -215,8 +254,9 @@ namespace topos
     {
         vector<int> BlockSize;
         vector<T> temp;
-        vector<int> count_i_mas;
+        vector<int> nt_i_mas;
         vector<int> count_mass;
+        vector<int> count_i_mas;
 
         VariableSizeMeshContainer<T> reverse_topo(temp, BlockSize);
         size_t nE = topo.getBlockNumber();

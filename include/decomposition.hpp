@@ -1,28 +1,32 @@
 #pragma once
 
+#include "FixedSizeMeshContainer.hpp"
 #include "stdafx.hpp"
 #include <map>
 
 namespace decomp
 {
-	 // Mesh decomposing(only decart meshes are supported yet)
-    vector<int> decomposeMesh(int Nx, int Ny, int Px, int Py, int px, int py){
+     // Mesh decomposing(only decart meshes are supported yet),returns pair - submesh id -> submesh coords
+    pair<size_t,vector<int>> decomposeMesh(int Nx, int Ny, int Px, int Py, int px, int py){
+
+        pair<size_t,vector<int>> submesh_params;
+        size_t id;
         vector<int> coord(4);// ibeg, iend; jbeg, jend indexes
 
         if ((px >= Px) || (py >= Py) || (px < 0) || (py < 0))
         {
             cerr << "Decomposition error: Wrong \'px\' or \'py\' values!" << endl;
-            return coord;
+            return submesh_params;
         }
         else if ((px >= Px) || (py >= Py))
         {
             cerr << "Decomposition error: Part index is more than part number!" << endl;
-            return coord;
+            return submesh_params;
         }
         else if ((Px > Nx - 1) || (Py > Ny - 1))
         {
             cerr << "Decomposition error: Number of parts is more than elements themselves!" << endl;
-            return coord;
+            return submesh_params;
         }
         else
         {
@@ -61,37 +65,81 @@ namespace decomp
                 coord[3] = yPartSize * (py + 1) + yLeft;
             }
 
-            return coord;
+            id = px * Py + py;
+            return std::make_pair(id,coord);
 
         }
     }
 
     // Mesh decomposing(only decart meshes are supported yet). Get all "ibeg, iend; jbeg, jend" for all indexes [0,Px - 1],[0, Py - 1]
-    FixedSizeMeshContainer<int> decomposeMesh(int Nx, int Ny, int Px, int Py){
+    vector<pair<size_t,vector<int>>> decomposeMesh(int Nx, int Ny, int Px, int Py){
 
-        FixedSizeMeshContainer<int> coords(4);
-        coords.reserve(4 * Px * Py);
+        vector<pair<size_t,vector<int>>> submeshes;
 
 		if ((Px > Nx - 1) || (Py > Ny - 1))
         {
             cerr << "Decomposition error: Number of parts is more than elements themselves!" << endl;
-            return coords;
+            return submeshes;
         }
         else
         {
-        	for(int px = 0; px < Px; ++px)
+            for(int px = 0; px < Px; ++px)
 	        {
-	            for(int py = 0; py < Py; ++py)
+                for(int py = 0; py < Py; ++py)
 	            {
-	                coords.add(decomposeMesh(Nx, Ny, Px, Py, px, py));
+                    submeshes.emplace_back(decomposeMesh(Nx, Ny, Px, Py, px, py));
 	            }
 	        }
-        	coords.printContainer();
-
-        	return coords;
+            return submeshes;
         }
     }
 
+    size_t getSubmeshIdByCoords(int x,int y, const vector<pair<size_t,vector<int>>>& submeshes, int Nx, int Ny)
+    {
+        size_t submesh_id;
+        for(auto iter = submeshes.begin(); iter != submeshes.end(); ++iter)
+        {
+            int beg_x = iter->second[0];
+            int end_x = iter->second[1];
+            int beg_y = iter->second[2];
+            int end_y = iter->second[3];
+
+            if ((end_x == Nx - 1) && (end_y == Ny - 1))//border
+            {
+                if ((x >= beg_x) && (x <= end_x) && (y >= beg_y) && (y <= end_y))
+                {
+                    submesh_id = iter->first;
+                    break;
+                }
+            }
+            else if (end_x == Nx - 1)//border
+            {
+                if ((x >= beg_x) && (x <= end_x) && (y >= beg_y) && (y < end_y))
+                {
+                    submesh_id = iter->first;
+                    break;
+                }
+            }
+            else if (end_y == Ny - 1)//border
+            {
+                if ((x >= beg_x) && (x < end_x) && (y >= beg_y) && (y <= end_y))
+                {
+                    submesh_id = iter->first;
+                    break;
+                }
+            }
+            else
+            {
+                if ((x >= beg_x) && (x < end_x) && (y >= beg_y) && (y < end_y))
+                {
+                    submesh_id = iter->first;
+                    break;
+                }
+            }
+        }
+
+        return submesh_id;
+    }
 
     void getGlobalIndexes(map<int,int>& G2L, vector<int>& global)
     {
@@ -113,5 +161,4 @@ namespace decomp
             local.push_back(map_iter->second);
         }
     }
-
 }
