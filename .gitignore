@@ -11,3 +11,8 @@ test_vtk
 prod
 .cmake
 build
+
+===============
+QT Creator
+==============
+CMakeLists.txt.user
