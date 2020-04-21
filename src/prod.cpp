@@ -101,25 +101,37 @@ int main(int argc, char **argv) {
             map<int,int> G2L;
             vector<int> L2G;
             vector<int> part;
-            vector<pair<size_t,int>> haloes;
-            vector<pair<size_t,int>> interfaces;
+            VariableSizeMeshContainer<int> nodes;
 
             vector<pair<size_t,vector<int>>> submeshes = decomp::decomposeMesh(Nx,Ny,Px,Py);
 
             start = omp_get_wtime();
-            topoEN = topos::build_topoEN(Nx, Ny, k3, k4, 1, submeshes, G2L, L2G, part, haloes, interfaces);
+            topoEN = topos::build_topoEN(Nx, Ny, k3, k4, 0, submeshes, G2L, L2G, part, nodes);
             end = omp_get_wtime();
 
+
+            cout << "Part: " << endl;
             for(auto i = part.begin(); i != part.end();++i)
             {
                 std::cout << *i <<  std::endl;
             }
 
+//            cout << "Interfaces: " << endl;
+//            for(auto i = interfaces.begin(); i != interfaces.end();++i)
+//            {
+//                std::cout <<  i->first << " " <<  i->second << std::endl;
+//            }
+
+//            cout << "Haloes: " << endl;
+//            for(auto i = haloes.begin(); i != haloes.end();++i)
+//            {
+//                std::cout <<  i->first << " " <<  i->second << std::endl;
+//            }
+
             cout << "\ttopoEN: " << end - start << " sec" << endl;
 
             localTopoEN = topos::toLocalIndexesTopoEN(topoEN,G2L);
 
-            G2L.clear();
 
             start = omp_get_wtime();
             topoNE = topos::build_reverse_topo(localTopoEN);
