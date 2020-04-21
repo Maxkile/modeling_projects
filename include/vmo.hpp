@@ -8,8 +8,6 @@
 #include "platformDependencies.hpp"
 #include "Sparse.hpp"
 
-extern double timeSpmv;
-
 //vector matrix operations: consider we are having same template arguments
 namespace vmo
 {
@@ -77,241 +75,33 @@ namespace vmo
 	
 
 	// Compute eucledian norm
-	double norm(const std::vector<double>& vec){
-		return sqrt(dot(vec,vec));
-	}
+    double norm(const std::vector<double>& vec);
 
-#if 0
-	// Compute determinant matrix T
-	template <typename M>
-	M det(M** T, int N)
-	{
-		M det__;
-		int sub_j, s;
-		M** subT;    // Субматрица как набор ссылок на исходную матрицу
+    template<typename VT>
+    void join(vector<VT>& target, const vector<VT>& arg)
+    {
+        size_t oldSize = target.size();
+        target.resize(target.size() + arg.size());
+        for(size_t i = 0; i < arg.size(); ++i)
+        {
+            target[i + oldSize] = arg[i];
+        }
+    }
 
-		switch (N)
-		{
-		case 1:
-			return T[0][0];
-		case 2:
-			return T[0][0] * T[1][1] - T[0][1] * T[1][0];
-		default:
-			if (N < 1)
-			{
-				throw 0;  // Некорректная матрица
-			}
-			subT = new M*[N - 1];  // Массив ссылок на столбцы субматрицы
-			det__ = 0;
-			s = 1;        // Знак минора
-			for (int i = 0; i < N; i++)  // Разложение по первому столбцу
-			{
-				sub_j = 0;
-				for (int j = 0; j < N; j++)// Заполнение субматрицы ссылками на исходные столбцы
-				{
-					if (i != j)      // исключить i строку
-					{
-						subT[sub_j++] = T[j] + 1;  // здесь + 1 исключает первый столбец
-					}
+    template<typename VT,typename... Args>
+    void join(vector<VT>& target, const vector<VT>& arg, const vector<Args>&... args)
+    {
+        join(target,arg);
+        join(target,args...);
+    }
 
-				}
-				det__ = det__ + s * T[i][0] * det(subT, N - 1);
-				s = -s;
-			};
-			delete[] subT;
-			return det__;
-		};
-	};
-
-
-	// Check symmetric
-	template <typename M>
-	bool isSymmetric(M** mas, int n)
-	{
-		for (int i = 0; i < n - 1; ++i)
-		{
-			for (int j = i + 1; j < n; ++j)
-			{
-				if (mas[i][j] != mas[j][i])
-				{
-					return false;
-				}
-			}
-		}
-		return true;
-	}
-
-	// Check A > 0
-	template <typename M>
-	bool isPositive(M** mas, int n)
-
-	// Compute eucledian norm
-	double norm(const std::vector<double>& vec){
-		return sqrt(dot(vec,vec));
-	}
-
-#if 0
-	// Compute determinant matrix T
-	template <typename M>
-	M det(M** T, int N)
-	{
-		M det__;
-		int sub_j, s;
-		M** subT;    // Субматрица как набор ссылок на исходную матрицу
-
-		switch (N)
-		{
-		case 1:
-			return T[0][0];
-		case 2:
-			return T[0][0] * T[1][1] - T[0][1] * T[1][0];
-		default:
-			if (N < 1)
-			{
-				throw 0;  // Некорректная матрица
-			}
-			subT = new M*[N - 1];  // Массив ссылок на столбцы субматрицы
-			det__ = 0;
-			s = 1;        // Знак минора
-			for (int i = 0; i < N; i++)  // Разложение по первому столбцу
-			{
-				sub_j = 0;
-				for (int j = 0; j < N; j++)// Заполнение субматрицы ссылками на исходные столбцы
-				{
-					if (i != j)      // исключить i строку
-					{
-						subT[sub_j++] = T[j] + 1;  // здесь + 1 исключает первый столбец
-					}
-
-				}
-				det__ = det__ + s * T[i][0] * det(subT, N - 1);
-				s = -s;
-			};
-			delete[] subT;
-			return det__;
-		};
-	};
-
-
-	// Check symmetric
-	template <typename M>
-	bool isSymmetric(M** mas, int n)
-	{
-		for (int i = 0; i < n - 1; ++i)
-		{
-			for (int j = i + 1; j < n; ++j)
-			{
-				if (mas[i][j] != mas[j][i])
-				{
-					return false;
-				}
-			}
-		}
-		return true;
-	}
-
-	// Check A > 0
-	template <typename M>
-	bool isPositive(M** mas, int n)
-	{
-
-		M** minor = nullptr;
-		M value_minor;
-
-		if (!isSymmetric(mas, n))
-		{
-			cout << "Matrix is not symmetric!" << endl;
-			return false;
-		}
-
-		for (int i = 1; i <= n; i++)
-		{
-			if (i == 1)
-			{
-				value_minor = mas[0][0];
-			}
-			else
-			{
-				minor = new M*[i];
-				for (int j = 1; j <= i; j++)
-				{
-					minor[j - 1] = new M[i];
-				}
-				for (int k = 0; k < i; k++)
-				{
-					for (int l = 0; l < i; l++)
-					{
-						minor[k][l] = mas[k][l];
-					}
-					value_minor = det(minor, i);
-				}
-				for (int j = 1; j <= i; j++)
-				{
-					delete[] minor[j - 1];
-				}
-				delete[] minor;
-			}
-			if (value_minor <= 0)
-			{
-				return false;
-			}
-		}
-		return true;
-	}
-#endif
-	{
-
-		M** minor = nullptr;
-		M value_minor;
-
-		if (!isSymmetric(mas, n))
-		{
-			cout << "Matrix is not symmetric!" << endl;
-			return false;
-		}
-
-		for (int i = 1; i <= n; i++)
-		{
-			if (i == 1)
-			{
-				value_minor = mas[0][0];
-			}
-			else
-			{
-				minor = new M*[i];
-				for (int j = 1; j <= i; j++)
-				{
-					minor[j - 1] = new M[i];
-				}
-				for (int k = 0; k < i; k++)
-				{
-					for (int l = 0; l < i; l++)
-					{
-						minor[k][l] = mas[k][l];
-					}
-					value_minor = det(minor, i);
-				}
-				for (int j = 1; j <= i; j++)
-				{
-					delete[] minor[j - 1];
-				}
-				delete[] minor;
-			}
-			if (value_minor <= 0)
-			{
-				return false;
-			}
-		}
-		return true;
-	}
-#endif
-
-
-	//A = A^(T) > 0
+    //Think that A = A^(T) > 0
 	template<typename M, typename V>
 	std::vector<double> conGradSolver(Sparse<M>& A, const std::vector<V>& b, size_t threadsNum = 4, size_t n_max = 100, double eps = 0.0000001)
 	{
 		std::vector<double> x_prev(A.getDenseColumns());
+        double timeSPmv = 0;
+
 		if (A.getDenseColumns() != b.size())
 		{
 			std::cerr << "Incompatible sizes in Solver!" << std::endl;
@@ -356,7 +146,7 @@ namespace vmo
 
  			do
 			{
-				reverse_M.spmv(r_prev, z, threadsNum);
+                reverse_M.spmv(r_prev, z, timeSPmv, threadsNum);
 				delta_cur = dot(r_prev, z, threadsNum);
 
 				if (k == 1)
@@ -371,7 +161,7 @@ namespace vmo
 					p_cur = multiplyResult;//don't know how to improve
 				}
 
-				A.spmv(p_cur, q, threadsNum);
+                A.spmv(p_cur, q, timeSPmv, threadsNum);
 				alpha = delta_cur / dot(p_cur, q);
 
 				multiply(p_cur, multiplyResult, alpha, threadsNum);
@@ -395,7 +185,7 @@ namespace vmo
 			std::cout << "Dot functions total time: " << timeDot << std::endl;
 			std::cout << "Axpby functions total time: " << timeAxpby << std::endl;
 			std::cout << "Multiply functions total time: " << timeMultiply << std::endl;
-			std::cout << "Spmv functions total time: " << timeSpmv << std::endl;
+            std::cout << "Spmv functions total time: " << timeSPmv << std::endl;
 			std::cout << std::endl;
 			std::cout << "Conjugate gradient method solution total time: " << conGradSolverTime << std::endl;
 			std::cout << std::endl;

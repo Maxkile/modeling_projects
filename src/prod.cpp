@@ -101,12 +101,17 @@ int main(int argc, char **argv) {
             map<int,int> G2L;
             vector<int> L2G;
             vector<int> part;
-            VariableSizeMeshContainer<int> nodes;
+
+            //TODO: unite in one(join is already written)
+            vector<int> inner;
+            vector<int> interface;
+            vector<int> haloes;
+
 
             vector<pair<size_t,vector<int>>> submeshes = decomp::decomposeMesh(Nx,Ny,Px,Py);
 
             start = omp_get_wtime();
-            topoEN = topos::build_topoEN(Nx, Ny, k3, k4, 0, submeshes, G2L, L2G, part, nodes);
+            topoEN = topos::build_topoEN(Nx, Ny, k3, k4, 2, submeshes, G2L, L2G, part, inner,interface,haloes);
             end = omp_get_wtime();
 
 
@@ -116,17 +121,23 @@ int main(int argc, char **argv) {
                 std::cout << *i <<  std::endl;
             }
 
-//            cout << "Interfaces: " << endl;
-//            for(auto i = interfaces.begin(); i != interfaces.end();++i)
-//            {
-//                std::cout <<  i->first << " " <<  i->second << std::endl;
-//            }
+            cout << "Inner: " << endl;
+            for(auto i = inner.begin(); i != inner.end();++i)
+            {
+                std::cout << *i <<  std::endl;
+            }
 
-//            cout << "Haloes: " << endl;
-//            for(auto i = haloes.begin(); i != haloes.end();++i)
-//            {
-//                std::cout <<  i->first << " " <<  i->second << std::endl;
-//            }
+            cout << "Interface: " << endl;
+            for(auto i = interface.begin(); i != interface.end();++i)
+            {
+                std::cout << *i <<  std::endl;
+            }
+            cout << "Haloes: " << endl;
+
+            for(auto i = haloes.begin(); i != haloes.end();++i)
+            {
+                std::cout << *i <<  std::endl;
+            }
 
             cout << "\ttopoEN: " << end - start << " sec" << endl;
 
@@ -216,7 +227,7 @@ int main(int argc, char **argv) {
             cout << "\nTopoNN:\n" << endl;
             topoNN.printContainer();
 
-            if (!type) draw_grid(Nx - 1, Ny - 1, k3, k4);
+            if (!type) draw_mesh(Nx - 1, Ny - 1, k3, k4);
         }
         else if (!strcmp(argv[argc-3], "--solver")){
 

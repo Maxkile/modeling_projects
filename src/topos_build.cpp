@@ -1,4 +1,4 @@
-#include "include/toposBuild.hpp"
+#include "toposBuild.hpp"
 
 #include <omp.h>
 
@@ -70,21 +70,20 @@ VariableSizeMeshContainer<int> topos::toLocalIndexesTopoEN(VariableSizeMeshConta
  * @nodes Global numeration for inner, halo and interface submesh nodes
 */
 VariableSizeMeshContainer<int> topos::build_topoEN(int Nx, int Ny, int k3, int k4, size_t submesh_id, const vector<pair<size_t,vector<int>>>& submeshes,
-                                            map<int,int>& G2L, vector<int>& L2G, vector<int>& part,VariableSizeMeshContainer<int>& nodes)
+                                            map<int,int>& G2L, vector<int>& L2G, vector<int>& part,vector<int>& inner,vector<int>& interface,
+                                            vector<int>& haloes)
 {
     G2L.clear();
     L2G.clear();
     part.clear();
-    nodes.clear();
+
+    inner.clear();
+    interface.clear();
+    haloes.clear();
 
     vector<int> BlockSize;
     vector<int> temp;
     VariableSizeMeshContainer<int> topoEN(temp, BlockSize);
-
-    vector<int> inner;
-    vector<int> interface;
-    vector<int> halo;
-
 
     int beg_i = submeshes[submesh_id].second[0];
     int end_i = submeshes[submesh_id].second[1];
@@ -107,7 +106,7 @@ VariableSizeMeshContainer<int> topos::build_topoEN(int Nx, int Ny, int k3, int k
     int fullElementsSkipped = (Ny - 1) * beg_i + beg_j;//total number of elements is k3 + k4. So two triangles is one element itself
     int meshFigureStructureCur = computeMeshFiguresNumberLeft(k3,k4,fullElementsSkipped,0);
 
-    int local_j = 0;
+    int local_j = 0;//local numeration
     int cur_i = beg_i;
     int cur_j = beg_j;
 
@@ -124,7 +123,7 @@ VariableSizeMeshContainer<int> topos::build_topoEN(int Nx, int Ny, int k3, int k
 
             if (decomp::isHalo(cur_i,cur_j,submeshes,Nx,Ny,submesh_id))
             {
-                halo.push_back(Ny * cur_i + cur_j);
+                haloes.push_back(Ny * cur_i + cur_j);
             }
             else if (decomp::isInterface(cur_i,cur_j,submeshes,Nx,Ny,submesh_id))
             {
@@ -182,7 +181,7 @@ VariableSizeMeshContainer<int> topos::build_topoEN(int Nx, int Ny, int k3, int k
 
         if (decomp::isHalo(cur_i,cur_j,submeshes,Nx,Ny,submesh_id))
         {
-            halo.push_back(Ny * cur_i + cur_j);
+            haloes.push_back(Ny * cur_i + cur_j);
         }
         else if (decomp::isInterface(cur_i,cur_j,submeshes,Nx,Ny,submesh_id))
         {
@@ -211,7 +210,7 @@ VariableSizeMeshContainer<int> topos::build_topoEN(int Nx, int Ny, int k3, int k
 
         if (decomp::isHalo(cur_i,cur_j,submeshes,Nx,Ny,submesh_id))
         {
-            halo.push_back(Ny * cur_i + cur_j);
+            haloes.push_back(Ny * cur_i + cur_j);
         }
         else if (decomp::isInterface(cur_i,cur_j,submeshes,Nx,Ny,submesh_id))
         {
@@ -224,25 +223,6 @@ VariableSizeMeshContainer<int> topos::build_topoEN(int Nx, int Ny, int k3, int k
 
     }
 
-    std::cout << "Inner: " << std::endl;
-    for(size_t i = 0; i < inner.size();++i)
-    {
-        std::cout << inner[i] << std::endl;
-    }
-
-
-    std::cout << "Halo: " << std::endl;
-    for(size_t i = 0; i < halo.size();++i)
-    {
-        std::cout << halo[i] << std::endl;
-    }
-
-
-    std::cout << "Interface: " << std::endl;
-    for(size_t i = 0; i < interface.size();++i)
-    {
-        std::cout << interface[i] << std::endl;
-    }
     topoEN.add(temp, BlockSize);
     return topoEN;
 }

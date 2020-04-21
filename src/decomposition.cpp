@@ -1,4 +1,4 @@
-#include "include/decomposition.hpp"
+#include "decomposition.hpp"
 
 /*
  * Mesh decomposing(only decart meshes are supported yet),returns pair - submesh id -> submesh coords

@@ -9,8 +9,6 @@
 #include "platformDependencies.hpp"
 #include "VariableSizeMeshContainer.hpp"
 
-double timeSpmv = 0;
-
 template<typename T>
 class Sparse
 {
@@ -22,13 +20,12 @@ protected:
 
 public:
 
-	virtual void spmv(const std::vector<T>&, std::vector<T>& result, size_t threadsNumber = 4) const = 0;
-	virtual void spmv(const T*, std::vector<T>& result, size_t, size_t threadsNumber = 4) const = 0;
+    virtual void spmv(const std::vector<T>&, std::vector<T>& result, double& timeSPvm,size_t threadsNumber = 4) const = 0;
+    virtual void spmv(const T*, std::vector<T>& result, size_t, double& timeSPvm, size_t threadsNumber = 4) const = 0;
 	virtual T** getDenseMatrix() const = 0;
 	virtual void setValues(const std::vector<T>&) = 0;
 	virtual size_t getValuesSize() const = 0;
 	virtual std::vector<T> getDiagonal() const = 0;
-
 	
 	inline void printA() const
 	{
@@ -278,7 +275,7 @@ public:
 		return dense;
 	}
 
-	void spmv(const std::vector<T>& x, std::vector<T>& result, size_t threadsNumber = 4) const override
+    void spmv(const std::vector<T>& x, std::vector<T>& result, double& timeSPmv, size_t threadsNumber = 4) const override
 	{
 		if (x.size() != this->denseColumns)
 		{
@@ -297,11 +294,11 @@ public:
 					result[i] += x[this->JA[j]] * this->A[j];
 				}
 			}
-			timeSpmv += omp_get_wtime() - start;
+            timeSPmv += omp_get_wtime() - start;
 		}
 	}
 
-	void spmv(const T* x, std::vector<T>& result, size_t xSize, size_t threadsNumber = 4) const override
+    void spmv(const T* x, std::vector<T>& result, size_t xSize, double& timeSPmv, size_t threadsNumber = 4) const override
 	{
 
 		if (xSize != this->denseColumns)
@@ -321,7 +318,7 @@ public:
 					result[i] += x[this->JA[j]] * this->A[j];
 				}
 			}
-			timeSpmv+= omp_get_wtime() - start;
+            timeSPmv += omp_get_wtime() - start;
 		}
 	}
 
@@ -464,7 +461,7 @@ public:
 		return dense;
 	}
 
-	void spmv(const std::vector<T>& x, std::vector<T>& result, size_t threadsNumber = 4) const override
+    void spmv(const std::vector<T>& x, std::vector<T>& result, double& timeSPmv, size_t threadsNumber = 4) const override
 	{
 		if (x.size() != this->denseColumns)
 		{
@@ -482,11 +479,11 @@ public:
 				for (size_t j = IA[i]; j < IA[i + 1]; j++)
 					result[i] += x[this->JA[j]] * (this->A[j]);
 			}
-			timeSpmv+= omp_get_wtime() - start;
+            timeSPmv+= omp_get_wtime() - start;
 		}
 	}
 
-	void spmv(const T* x, std::vector<T>& result, size_t xSize,  size_t threadsNumber = 4) const override
+    void spmv(const T* x, std::vector<T>& result, size_t xSize, double& timeSPmv, size_t threadsNumber = 4) const override
 	{
 		if (xSize != this->denseColumns)
 		{
@@ -503,7 +500,7 @@ public:
 				for (size_t j = IA[i]; j < IA[i + 1]; j++)
 					result[i] += x[this->JA[j]] * (this->A[j]);
 			}
-			timeSpmv+= omp_get_wtime() - start;
+            timeSPmv+= omp_get_wtime() - start;
 		}
 	}
 
@@ -643,7 +640,7 @@ public:
 		return dense;
 	};
 
-	void spmv(const std::vector<T>& x, std::vector<T>& result, size_t threadsNumber = 4) const override
+    void spmv(const std::vector<T>& x, std::vector<T>& result, double& timeSPmv, size_t threadsNumber = 4) const override
 	{
 		if (x.size() != this->denseColumns)
 		{
@@ -659,11 +656,11 @@ public:
 			{
 				result[IA[i]] += (this->A[i]) * x[this->JA[i]];
 			}
-			timeSpmv+= omp_get_wtime() - start;
+            timeSPmv+= omp_get_wtime() - start;
 		}
 	}
 
-	void spmv(const T* x, std::vector<T>& result, size_t xSize,  size_t threadsNumber = 4) const override
+    void spmv(const T* x, std::vector<T>& result, size_t xSize, double& timeSPmv, size_t threadsNumber = 4) const override
 	{
 		if (xSize != this->denseColumns)
 		{
@@ -679,7 +676,7 @@ public:
 			{
 				result[IA[i]] += (this->A[i]) * x[this->JA[i]];
 			}
-			timeSpmv+= omp_get_wtime() - start;
+            timeSPmv+= omp_get_wtime() - start;
 		}	
 	};
 
