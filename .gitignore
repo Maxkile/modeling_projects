@@ -1,5 +1,4 @@
 *.o
-*.txt
 main.cpp
 .vscode
 .vs
@@ -15,4 +14,4 @@ build
 ===============
 QT Creator
 ==============
-CMakeLists.txt.user
+

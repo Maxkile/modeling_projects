@@ -18,4 +18,10 @@ using OPENMP_INDEX_TYPE = long long;
 #define mkdir(filename,mode) (_mkdir(filename))
 using OPENMP_INDEX_TYPE = size_t;
 
+#elif __APPLE__
+
+#include <sys/stat.h>
+
+using OPENMP_INDEX_TYPE = size_t;
+
 #endif
