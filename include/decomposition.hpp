@@ -1,8 +1,11 @@
 #pragma once
 
-#include "FixedSizeMeshContainer.hpp"
-#include "stdafx.hpp"
 #include <map>
+#include <set>
+
+#include "stdafx.hpp"
+#include "FixedSizeMeshContainer.hpp"
+#include "vmo.hpp"
 
 namespace decomp
 {
@@ -29,6 +32,16 @@ namespace decomp
      * Is node of 'id' submesh is halo node of 'current_id' submesh
     */
     bool isHalo(int x, int y, const vector<pair<size_t,vector<int>>>& submeshes, int Nx, int Ny, size_t current_id);
+
+    /*
+     * Considering that (cur_i,cur_j) node is an interface node add all border to halo set
+    */
+    void addHaloNodes(int x, int y, const vector<pair<size_t,vector<int>>>& submeshes, int Nx, int Ny, size_t current_id, set<int>& haloes);
+
+    /*
+     * Forming part vector from inner,interface and halo nodes
+     */
+    void formPart(vector<int>& part,const vector<int>& inner,const vector<int>& interface,const vector<int>& halo,const vector<pair<size_t,vector<int>>>& submeshes, int Nx, int Ny);
 
     /*
      * Global mesh nodes indexing

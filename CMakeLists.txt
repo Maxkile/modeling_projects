@@ -21,7 +21,7 @@ set(HEADERS_COMPILE ${INCLUDE_DIRECTORIES}/FixedSizeMeshContainer.hpp  ${INCLUDE
     ${INCLUDE_DIRECTORIES}/Sparse.hpp ${INCLUDE_DIRECTORIES}/stdafx.hpp
     ${INCLUDE_DIRECTORIES}/VariableSizeMeshContainer.hpp ${INCLUDE_DIRECTORIES}/vmo.hpp ${INCLUDE_DIRECTORIES}/vtkGenerator.hpp)
 
-set(SOURCES ${SRC_DIRECTORIES}/solver.cpp ${SRC_DIRECTORIES}/decomposition.cpp ${SRC_DIRECTORIES}/prod.cpp ${SRC_DIRECTORIES}/topos_build.cpp
+set(SOURCES ${SRC_DIRECTORIES}/solver.cpp ${SRC_DIRECTORIES}/decomposition.cpp ${SRC_DIRECTORIES}/prod.cpp ${SRC_DIRECTORIES}/toposBuild.cpp
     ${SRC_DIRECTORIES}/vmo.cpp ${SRC_DIRECTORIES}/IO.cpp)
 
 

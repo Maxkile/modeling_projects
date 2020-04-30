@@ -81,10 +81,9 @@ namespace vmo
     void join(vector<VT>& target, const vector<VT>& arg)
     {
         size_t oldSize = target.size();
-        target.resize(target.size() + arg.size());
         for(size_t i = 0; i < arg.size(); ++i)
         {
-            target[i + oldSize] = arg[i];
+            target.push_back(arg[i]);
         }
     }
 

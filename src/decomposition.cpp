@@ -145,23 +145,31 @@ size_t decomp::getSubmeshIdByCoords(int x,int y, const vector<pair<size_t,vector
 /*
  * Is node of with (x,y) coords is interface node of 'current_id' submesh
 */
-bool decomp::isInterface(int x, int y, const vector<pair<size_t,vector<int>>>& submeshes, int Nx, int Ny, size_t current_id)
+bool decomp::isHalo(int x, int y, const vector<pair<size_t,vector<int>>>& submeshes, int Nx, int Ny, size_t current_id)
 {
-    return !(decomp::getSubmeshIdByCoords(x,y,submeshes,Nx,Ny) == current_id);
+    if (x >=0 && y >=0 && x < Nx && y < Ny)
+    {
+        return !(decomp::getSubmeshIdByCoords(x,y,submeshes,Nx,Ny) == current_id);
+    }
+    else
+    {
+        return false;
+    }
+
 }
 
 
 /*
  * Is node of 'id' submesh is halo node of 'current_id' submesh
 */
-bool decomp::isHalo(int x, int y, const vector<pair<size_t,vector<int>>>& submeshes, int Nx, int Ny, size_t current_id)
+bool decomp::isInterface(int x, int y, const vector<pair<size_t,vector<int>>>& submeshes, int Nx, int Ny, size_t current_id)
 {
-    if (decomp::getSubmeshIdByCoords(x,y,submeshes,Nx,Ny) == current_id)//not interface
+    if (!isHalo(x,y,submeshes,Nx,Ny,current_id) || !(x >= 0 && y >= 0 && x < Nx && y < Ny))//not halo
     {
-        if(!(decomp::getSubmeshIdByCoords(x + 1,y,submeshes,Nx,Ny) == current_id) || !(decomp::getSubmeshIdByCoords(x,y + 1,submeshes,Nx,Ny) == current_id)
-                ||(!(decomp::getSubmeshIdByCoords(x + 1,y + 1,submeshes,Nx,Ny) == current_id)) || (!(decomp::getSubmeshIdByCoords(x - 1,y,submeshes,Nx,Ny) == current_id))
-                || (!(decomp::getSubmeshIdByCoords(x,y - 1,submeshes,Nx,Ny) == current_id)) || (!(decomp::getSubmeshIdByCoords(x - 1,y - 1,submeshes,Nx,Ny) == current_id))
-                || (!(decomp::getSubmeshIdByCoords(x - 1,y + 1,submeshes,Nx,Ny) == current_id)) || (!(decomp::getSubmeshIdByCoords(x + 1,y - 1,submeshes,Nx,Ny) == current_id)))
+        if(isHalo(x + 1,y,submeshes,Nx,Ny,current_id) || isHalo(x,y + 1,submeshes,Nx,Ny,current_id)
+                || isHalo(x + 1,y + 1,submeshes,Nx,Ny,current_id) || isHalo(x - 1,y,submeshes,Nx,Ny,current_id)
+                || isHalo(x,y - 1,submeshes,Nx,Ny,current_id) || isHalo(x - 1,y - 1,submeshes,Nx,Ny, current_id)
+                || isHalo(x - 1,y + 1,submeshes,Nx,Ny,current_id) || isHalo(x + 1,y - 1,submeshes,Nx,Ny, current_id))
         {
             return true;
         }
@@ -170,7 +178,56 @@ bool decomp::isHalo(int x, int y, const vector<pair<size_t,vector<int>>>& submes
 }
 
 /*
- * Global mesh nodes indexing
+ * Considering that (cur_i,cur_j) node is an interface node check and add all neighbour nodes to halo set. Also adds them to part set. Mesh is cartesian-like
+ *
+ * - - - - -
+ * - # # # -
+ * - # * # -
+ * - # # # -
+ * - - - - -
+ *
+ * For '*' node '#' will be checked if they are halo or not.
+*/
+void decomp::addHaloNodes(int x, int y, const vector<pair<size_t,vector<int>>>& submeshes, int Nx, int Ny, size_t current_id, set<int>& haloes)
+{
+    for(int i = -1; i <= 1; ++i)
+    {
+        for(int j = -1; j <= 1; ++j)
+        {
+            int newX = x + i;
+            int newY = y + j;
+            if (newX >= 0 && newY >= 0 && newX < Nx && newY < Ny && isHalo(newX, newY,submeshes,Nx,Ny,current_id))
+            {
+                haloes.insert(newX * Ny + newY);
+            }
+        }
+    }
+}
+
+/*
+ * Forming part vector from vector of nodes
+ */
+void decomp::formPart(vector<int>& part,const vector<int>& inner,const vector<int>& interface,const vector<int>& halo,const vector<pair<size_t,vector<int>>>& submeshes, int Nx, int Ny)
+{
+    part.clear();
+
+    size_t size = inner.size() + interface.size() + halo.size();
+    vector<int> temp;//united vector
+
+    part.reserve(size);
+
+    vmo::join(part,inner,interface,halo);
+
+    for(size_t i = 0; i < part.size(); ++i)
+    {
+        int x = part[i] / Ny;
+        int y = part[i] % Ny;
+        part[i] = decomp::getSubmeshIdByCoords(x,y,submeshes,Nx,Ny);
+    }
+}
+
+/*
+* Global mesh nodes indexing
 */
 void decomp::getGlobalIndexes(map<int,int>& G2L, vector<int>& global)
 {

@@ -2,6 +2,7 @@
 #include "stdafx.hpp"
 
 #include <map>
+#include <set>
 #include <iostream>
 
 #include "FixedSizeMeshContainer.hpp"
@@ -26,7 +27,7 @@ namespace topos
     //topoEN
     //Also generates G2L,L2G,halo's,interfaces vectors required for topologies generating
     VariableSizeMeshContainer<int> build_topoEN(int Nx, int Ny, int k3, int k4, size_t submesh_id, const vector<pair<size_t,vector<int>>>& submeshes,
-                                                map<int,int>& G2L, vector<int>& L2G, vector<int>& part,vector<int>& inner,vector<int>& interface,
+                                                map<int,int>& G2L, vector<int>& L2G,vector<int>& inner,vector<int>& interface,
                                                 vector<int>& haloes);
 
 

@@ -70,12 +70,11 @@ VariableSizeMeshContainer<int> topos::toLocalIndexesTopoEN(VariableSizeMeshConta
  * @nodes Global numeration for inner, halo and interface submesh nodes
 */
 VariableSizeMeshContainer<int> topos::build_topoEN(int Nx, int Ny, int k3, int k4, size_t submesh_id, const vector<pair<size_t,vector<int>>>& submeshes,
-                                            map<int,int>& G2L, vector<int>& L2G, vector<int>& part,vector<int>& inner,vector<int>& interface,
+                                            map<int,int>& G2L, vector<int>& L2G, vector<int>& inner,vector<int>& interface,
                                             vector<int>& haloes)
 {
     G2L.clear();
     L2G.clear();
-    part.clear();
 
     inner.clear();
     interface.clear();
@@ -90,7 +89,7 @@ VariableSizeMeshContainer<int> topos::build_topoEN(int Nx, int Ny, int k3, int k
     int beg_j = submeshes[submesh_id].second[2];
     int end_j = submeshes[submesh_id].second[3];
 
-    size_t mesh_id;//submesh id for current params
+    set<int> haloes_set;
 
     if ((beg_i > Nx) || (end_i > Nx) || (beg_j > Ny) || (end_j > Ny) || (end_i <= 0) || (end_i <= 0) || (end_i <= 0) || (end_i <= 0))
     {
@@ -117,21 +116,14 @@ VariableSizeMeshContainer<int> topos::build_topoEN(int Nx, int Ny, int k3, int k
             G2L.insert(pair<int,int>(Ny * cur_i + cur_j, local_j));
             L2G.push_back(Ny * cur_i + cur_j);
 
-            //forming part(inner nodes)
-
-            part.push_back(submeshes[submesh_id].first);
-
-            if (decomp::isHalo(cur_i,cur_j,submeshes,Nx,Ny,submesh_id))
-            {
-                haloes.push_back(Ny * cur_i + cur_j);
-            }
-            else if (decomp::isInterface(cur_i,cur_j,submeshes,Nx,Ny,submesh_id))
+           if (decomp::isInterface(cur_i,cur_j,submeshes,Nx,Ny,submesh_id))
             {
                 interface.push_back(Ny * cur_i + cur_j);
+                decomp::addHaloNodes(cur_i,cur_j,submeshes,Nx,Ny,submesh_id,haloes_set);
             }
             else
             {
-                inner.push_back((Ny * cur_i + cur_j));
+                inner.push_back(Ny * cur_i + cur_j);
             }
 
             if (meshFigureStructureCur > k4)//triangle
@@ -173,23 +165,18 @@ VariableSizeMeshContainer<int> topos::build_topoEN(int Nx, int Ny, int k3, int k
         G2L.insert(pair<int,int>(Ny * cur_i + cur_j, local_j));
         L2G.push_back(Ny * cur_i + cur_j);
 
-
-        //forming halo and part
-        mesh_id = decomp::getSubmeshIdByCoords(cur_i,cur_j,submeshes,Nx,Ny);
-        part.push_back(mesh_id);
-
-
         if (decomp::isHalo(cur_i,cur_j,submeshes,Nx,Ny,submesh_id))
         {
-            haloes.push_back(Ny * cur_i + cur_j);
+            haloes_set.insert(Ny * cur_i + cur_j);
         }
         else if (decomp::isInterface(cur_i,cur_j,submeshes,Nx,Ny,submesh_id))
         {
             interface.push_back(Ny * cur_i + cur_j);
+            decomp::addHaloNodes(cur_i,cur_j,submeshes,Nx,Ny,submesh_id,haloes_set);
         }
         else
         {
-            inner.push_back((Ny * cur_i + cur_j));
+            inner.push_back(Ny * cur_i + cur_j);
         }
 
 
@@ -203,24 +190,26 @@ VariableSizeMeshContainer<int> topos::build_topoEN(int Nx, int Ny, int k3, int k
         G2L.insert(pair<int,int>(Ny * end_i + cur_j, local_j));
         L2G.push_back(Ny * end_i + cur_j);
 
-        //forming halo and part
-        mesh_id = decomp::getSubmeshIdByCoords(cur_i,cur_j,submeshes,Nx,Ny);
-        part.push_back(mesh_id);
-
-
         if (decomp::isHalo(cur_i,cur_j,submeshes,Nx,Ny,submesh_id))
         {
-            haloes.push_back(Ny * cur_i + cur_j);
+            haloes_set.insert(Ny * cur_i + cur_j);
         }
-        else if (decomp::isInterface(cur_i,cur_j,submeshes,Nx,Ny,submesh_id))
+        else if (decomp::isInterface(cur_i,cur_j,submeshes,Nx,Ny,submesh_id))//if interface -> check and add all border nodes as haloes
         {
             interface.push_back(Ny * cur_i + cur_j);
+            decomp::addHaloNodes(cur_i,cur_j,submeshes,Nx,Ny,submesh_id,haloes_set);
         }
         else
         {
-            inner.push_back((Ny * cur_i + cur_j));
+            inner.push_back(Ny * cur_i + cur_j);
         }
 
+    }
+
+    haloes.reserve(haloes_set.size());
+    for(auto it = haloes_set.cbegin(); it != haloes_set.cend(); ++it)
+    {
+        haloes.push_back(*it);
     }
 
     topoEN.add(temp, BlockSize);

@@ -111,37 +111,43 @@ int main(int argc, char **argv) {
             vector<pair<size_t,vector<int>>> submeshes = decomp::decomposeMesh(Nx,Ny,Px,Py);
 
             start = omp_get_wtime();
-            topoEN = topos::build_topoEN(Nx, Ny, k3, k4, 2, submeshes, G2L, L2G, part, inner,interface,haloes);
+            topoEN = topos::build_topoEN(Nx, Ny, k3, k4, 1, submeshes, G2L, L2G, inner, interface, haloes);
             end = omp_get_wtime();
 
+            decomp::formPart(part,inner,interface,haloes,submeshes,Nx,Ny);
 
-            cout << "Part: " << endl;
-            for(auto i = part.begin(); i != part.end();++i)
+            /////////////////////////////////////////////////Logging
             {
-                std::cout << *i <<  std::endl;
+                cout << "Part: " << endl;
+                for(auto i = part.begin(); i != part.end();++i)
+                {
+                    std::cout << *i <<  std::endl;
+                }
+
+                cout << "Inner: " << endl;
+                for(auto i = inner.begin(); i != inner.end();++i)
+                {
+                    std::cout << *i <<  std::endl;
+                }
+
+                cout << "Interface: " << endl;
+                for(auto i = interface.begin(); i != interface.end();++i)
+                {
+                    std::cout << *i <<  std::endl;
+                }
+                cout << "Haloes: " << endl;
+
+                for(auto i = haloes.begin(); i != haloes.end();++i)
+                {
+                    std::cout << *i <<  std::endl;
+                }
+
+                cout << "\ttopoEN: " << end - start << " sec" << endl;
+
+                localTopoEN = topos::toLocalIndexesTopoEN(topoEN,G2L);
             }
+            ////////////////////////////////////////////////////////////
 
-            cout << "Inner: " << endl;
-            for(auto i = inner.begin(); i != inner.end();++i)
-            {
-                std::cout << *i <<  std::endl;
-            }
-
-            cout << "Interface: " << endl;
-            for(auto i = interface.begin(); i != interface.end();++i)
-            {
-                std::cout << *i <<  std::endl;
-            }
-            cout << "Haloes: " << endl;
-
-            for(auto i = haloes.begin(); i != haloes.end();++i)
-            {
-                std::cout << *i <<  std::endl;
-            }
-
-            cout << "\ttopoEN: " << end - start << " sec" << endl;
-
-            localTopoEN = topos::toLocalIndexesTopoEN(topoEN,G2L);
 
 
             start = omp_get_wtime();
