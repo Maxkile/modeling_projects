@@ -1,13 +1,13 @@
 #pragma once
 #include "stdafx.hpp"
 
-#include <cstring>
 #include <cstdlib>
+#include <cstring>
 
-#include "vmo.hpp"
-#include "toposBuild.hpp"
-#include "Sparse.hpp"
 #include "IO.hpp"
+#include "Sparse.hpp"
+#include "toposBuild.hpp"
+#include "vmo.hpp"
 
-
-int solveFromTopoNN(VariableSizeMeshContainer<int>& topoNN, const char* type_matr, int threads = 4);
+int solveFromTopoNN(VariableSizeMeshContainer<int> &topoNN,
+                    const char *type_matr, int threads = 4);
