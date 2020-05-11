@@ -27,8 +27,8 @@ int main(int argc, char **argv) {
   VariableSizeMeshContainer<int> topoNE;
   VariableSizeMeshContainer<int> topoSN;
   VariableSizeMeshContainer<int> topoNS;
-  VariableSizeMeshContainer<int> topoNN;
-
+  VariableSizeMeshContainer<int> topoNN_1;
+  VariableSizeMeshContainer<int> topoNN_2;
   int type = 0;
 
   double start, end;
@@ -190,9 +190,15 @@ int main(int argc, char **argv) {
       cout << "\ttopoNS: " << end - start << " sec" << endl;
 
       start = omp_get_wtime();
-      topoNN = topos::build_topoNN(topoSN);
+      topoNN_1 = topos::build_topoNN_1(topoSN);
       end = omp_get_wtime();
-      cout << "\ttopoNN: " << end - start << " sec" << endl;
+      cout << "\ttopoNN_1: " << end - start << " sec" << endl;
+      
+      start = omp_get_wtime();
+      topoNN_2 = topos::build_topoNN_2(topoEN);
+      end = omp_get_wtime();
+      cout << "\ttopoNN_2: " << end - start << " sec" << endl;
+      
     } else if (!strcmp(argv[1], "--file")) {
       if (read_file(C, topoEN, topoSN)) {
         cout << "File can't be read!" << endl;
@@ -201,7 +207,8 @@ int main(int argc, char **argv) {
       type = 1;
       topoNE = topos::build_reverse_topo(topoEN);
       topoNS = topos::build_reverse_topo(topoSN);
-      topoNN = topos::build_topoNN(topoSN);
+      topoNN_1 = topos::build_topoNN_1(topoSN);
+      topoNN_2 = topos::build_topoNN_2(topoEN);
     } else {
       cout << "Expected \"--gen\" or \"--file\"" << endl;
       return 1;
@@ -218,8 +225,11 @@ int main(int argc, char **argv) {
          << endl;
     cout << "\ttopoNS: " << (topoNS).getTotalSize() * sizeof(int) << " bytes"
          << endl;
-    cout << "\ttopoNN: " << (topoNN).getTotalSize() * sizeof(int) << " bytes"
+    cout << "\ttopoNN_1: " << (topoNN_1).getTotalSize() * sizeof(int) << " bytes"
          << endl;
+    cout << "\ttopoNN_2: " << (topoNN_2).getTotalSize() * sizeof(int) << " bytes"
+         << endl;
+
 
     // output mesh
     if (!strcmp(argv[argc - 2], "--vtk")) {
@@ -246,8 +256,10 @@ int main(int argc, char **argv) {
       topoSN.printContainer();
       cout << "\nTopoNS:\n" << endl;
       topoNS.printContainer();
-      cout << "\nTopoNN:\n" << endl;
-      topoNN.printContainer();
+      cout << "\nTopoNN_1:\n" << endl;
+      topoNN_1.printContainer();
+      cout << "\nTopoNN_2:\n" << endl;
+      topoNN_2.printContainer();
 
       if (!type)
         draw_mesh(Nx - 1, Ny - 1, k3, k4);
@@ -258,7 +270,7 @@ int main(int argc, char **argv) {
       topoSN.clear();
       topoNS.clear();
 
-      solveFromTopoNN(topoNN, argv[argc - 2], atoi(argv[argc - 1]));
+      solveFromTopoNN(topoNN_2, argv[argc - 2], atoi(argv[argc - 1]));
     } else {
       cout << "Expected \"--vtk\" <filename> ,\"--file\" or \"--print\" or "
               "\"--solver <format> <threads>\""
