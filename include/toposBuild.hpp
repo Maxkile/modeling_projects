@@ -52,8 +52,12 @@ build_topoBNS(const VariableSizeMeshContainer<int> &topo);
 // topoBSN
 VariableSizeMeshContainer<int> build_topoBSN(int Nx, int Ny);
 
-// topoNN
+// topoNN_1
 VariableSizeMeshContainer<int>
-build_topoNN(const VariableSizeMeshContainer<int> &topoSN);
+build_topoNN_1(const VariableSizeMeshContainer<int> &topoSN);
 
+// topoNN_2
+VariableSizeMeshContainer<int>
+build_topoNN_2(const VariableSizeMeshContainer<int> &topoEN);
+  
 } // namespace topos
