@@ -388,9 +388,9 @@ topos::build_topoBNS(const VariableSizeMeshContainer<int> &topo) {
   return topoBNS;
 }
 
-// topoNN
+// topoNN_1
 VariableSizeMeshContainer<int>
-topos::build_topoNN(const VariableSizeMeshContainer<int> &topoSN) {
+topos::build_topoNN_1(const VariableSizeMeshContainer<int> &topoSN) {
   vector<int> BlockSize;
   vector<int> temp;
   vector<int> count_i_mas;
@@ -438,6 +438,67 @@ topos::build_topoNN(const VariableSizeMeshContainer<int> &topoSN) {
       count_i_mas[topoSN[i][j]]--;
     }
   }
+
+  return topoNN;
+}
+
+// topoNN_2
+VariableSizeMeshContainer<int>
+topos::build_topoNN_2(const VariableSizeMeshContainer<int> &topoEN) {
+  int a, b, c, d, k, max_node;
+
+  k = topoEN.getBlockNumber();
+  max_node = topoEN[k - 1][topoEN.getBlockSize(k - 1) - 2] + 1;  
+
+  vector<vector<int>> arr(max_node, vector<int>(6, -1));
+  
+  for (size_t i = 0; i < k; i++) {
+    a = topoEN[i][0];
+    b = topoEN[i][1];
+    c = topoEN[i][2];
+    
+    arr[a][b - a + 2] = b;
+    arr[b][a - b + 3] = a; 
+    
+    if (topoEN.getBlockSize(i) == 3) {
+
+      if (i + 1 != k && topoEN[i][2] == topoEN[i + 1][2]) {
+        arr[b][c - b + 2] = c;
+        arr[c][b - c + 3] = b;
+      }
+      else {
+        arr[b][c - b + 3] = c;
+        arr[c][b - c + 2] = b;
+      }
+
+      arr[a][c - a + 2] = c;
+      arr[c][a - c + 3] = a;
+    }
+    else {
+      d = topoEN[i][3];
+      
+      arr[b][c - b + 2] = c;
+      arr[c][b - c + 3] = b;
+
+      arr[d][c - d + 2] = c;
+      arr[c][d - c + 3] = d;
+
+      arr[a][d - a + 2] = d;
+      arr[d][a - d + 3] = a;
+    }
+  }
+
+  vector<int> BlockSize (max_node, 0);
+  vector<int> temp;
+
+  for (size_t i = 0; i < max_node; i++) 
+    for (size_t j = 0; j < 6; j++) 
+      if (arr[i][j] != -1) {
+        ++BlockSize[i];
+        temp.push_back(arr[i][j]);
+      }
+
+  VariableSizeMeshContainer<int> topoNN(temp, BlockSize);
 
   return topoNN;
 }
