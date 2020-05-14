@@ -9,5 +9,5 @@
 #include "toposBuild.hpp"
 #include "vmo.hpp"
 
-int solveFromTopoNN(VariableSizeMeshContainer<int> &topoNN,
-                    const char *type_matr, int threads = 4);
+int solveFromTopoNN(const VariableSizeMeshContainer<int> &topoNN, const char *type_matr, NodesInfo *nodesinfo,
+                    size_t threadsNumber = 4);

@@ -17,7 +17,7 @@ include_directories(meshbuilder ${INCLUDE_DIRECTORIES})
 
 set(HEADERS_ONLY_INCLUDE ${INCLUDE_DIRECTORIES}/solver.hpp ${INCLUDE_DIRECTORIES}/decomposition.hpp ${INCLUDE_DIRECTORIES}/toposBuild.hpp)
 
-set(HEADERS_COMPILE ${INCLUDE_DIRECTORIES}/FixedSizeMeshContainer.hpp  ${INCLUDE_DIRECTORIES}/IO.hpp ${INCLUDE_DIRECTORIES}/platformDependencies.hpp
+set(HEADERS_COMPILE ${INCLUDE_DIRECTORIES}/nodeType.hpp ${INCLUDE_DIRECTORIES}/FixedSizeMeshContainer.hpp  ${INCLUDE_DIRECTORIES}/IO.hpp ${INCLUDE_DIRECTORIES}/platformDependencies.hpp
     ${INCLUDE_DIRECTORIES}/Sparse.hpp ${INCLUDE_DIRECTORIES}/stdafx.hpp
     ${INCLUDE_DIRECTORIES}/VariableSizeMeshContainer.hpp ${INCLUDE_DIRECTORIES}/vmo.hpp ${INCLUDE_DIRECTORIES}/vtkGenerator.hpp)
 
