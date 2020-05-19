@@ -111,11 +111,11 @@ VariableSizeMeshContainer<int> topos::build_topoEN(int Nx, int Ny, int k3, int k
     while (cur_i < end_i) {
         while (cur_j < end_j) {
 
-            if (decomp::isHalo(cur_i, cur_j, submeshes, Nx, Ny, submesh_id)) {
+            if (decomp::isInterfaceNeighbour(cur_i, cur_j, submeshes, Nx, Ny, submesh_id)) {
                 haloes.insert(Ny * cur_i + cur_j);
-            } else if (decomp::isInterface(cur_i, cur_j, submeshes, Nx, Ny, submesh_id)) {
+            } else if (decomp::isInterface(cur_i, cur_j, submeshes, Nx, Ny, k3, k4, submesh_id)) {
                 interface.push_back(Ny * cur_i + cur_j);
-                decomp::addHaloNodes(cur_i, cur_j, submeshes, Nx, Ny, submesh_id, haloes);
+                decomp::addHaloNodes(cur_i, cur_j, submeshes, Nx, Ny, k3, k4, submesh_id, haloes);
             } else {
                 inner.push_back(Ny * cur_i + cur_j);
             }
@@ -153,11 +153,11 @@ VariableSizeMeshContainer<int> topos::build_topoEN(int Nx, int Ny, int k3, int k
         meshFigureStructureCur = computeMeshFiguresNumberLeft(k3, k4, fullElementsSkipped, meshFigureStructureCur);
 
         // changing y coord
-        if (decomp::isHalo(cur_i, cur_j, submeshes, Nx, Ny, submesh_id)) {
+        if (decomp::isInterfaceNeighbour(cur_i, cur_j, submeshes, Nx, Ny, submesh_id)) {
             haloes.insert(Ny * cur_i + cur_j);
-        } else if (decomp::isInterface(cur_i, cur_j, submeshes, Nx, Ny, submesh_id)) {
+        } else if (decomp::isInterface(cur_i, cur_j, submeshes, Nx, Ny, k3, k4, submesh_id)) {
             interface.push_back(Ny * cur_i + cur_j);
-            decomp::addHaloNodes(cur_i, cur_j, submeshes, Nx, Ny, submesh_id, haloes);
+            decomp::addHaloNodes(cur_i, cur_j, submeshes, Nx, Ny, k3, k4, submesh_id, haloes);
         } else {
             inner.push_back(Ny * cur_i + cur_j);
         }
@@ -169,14 +169,11 @@ VariableSizeMeshContainer<int> topos::build_topoEN(int Nx, int Ny, int k3, int k
     for (cur_j = beg_j; cur_j <= end_j; ++cur_j) // last y, we haven't visited it yet, but have to
                                                  // store them too
     {
-        if (decomp::isHalo(cur_i, cur_j, submeshes, Nx, Ny, submesh_id)) {
+        if (decomp::isInterfaceNeighbour(cur_i, cur_j, submeshes, Nx, Ny, submesh_id)) {
             haloes.insert(Ny * cur_i + cur_j);
-        } else if (decomp::isInterface(cur_i, cur_j, submeshes, Nx, Ny,
-                                       submesh_id)) // if interface -> check and add
-                                                    // all border nodes as haloes
-        {
+        } else if (decomp::isInterface(cur_i, cur_j, submeshes, Nx, Ny, k3, k4, submesh_id)) {
             interface.push_back(Ny * cur_i + cur_j);
-            decomp::addHaloNodes(cur_i, cur_j, submeshes, Nx, Ny, submesh_id, haloes);
+            decomp::addHaloNodes(cur_i, cur_j, submeshes, Nx, Ny, k3, k4, submesh_id, haloes);
         } else {
             inner.push_back(Ny * cur_i + cur_j);
         }

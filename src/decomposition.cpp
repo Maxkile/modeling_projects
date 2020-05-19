@@ -123,12 +123,16 @@ size_t decomp::getSubmeshIdByCoords(int x, int y, const vector<pair<size_t, vect
 }
 
 /*
- * Is node of with (x,y) coords is interface node of 'current_id' submesh
+ * Is node of 'id' submesh is just interface neighbour node of 'current_id'
+ * submesh
+ *
  */
-bool decomp::isHalo(int x, int y, const vector<pair<size_t, vector<int>>> &submeshes, int Nx, int Ny,
-                    size_t current_id) {
-    if (x >= 0 && y >= 0 && x < Nx && y < Ny) {
-        return !(decomp::getSubmeshIdByCoords(x, y, submeshes, Nx, Ny) == current_id);
+
+bool decomp::isInterfaceNeighbour(int x, int y, const vector<pair<size_t, vector<int>>> &submeshes, int Nx, int Ny,
+                                  size_t current_id) {
+    if (x >= 0 && y >= 0 && x < Nx && y < Ny &&
+        !(decomp::getSubmeshIdByCoords(x, y, submeshes, Nx, Ny) == current_id)) {
+        return true;
     } else {
         return false;
     }
@@ -137,16 +141,26 @@ bool decomp::isHalo(int x, int y, const vector<pair<size_t, vector<int>>> &subme
 /*
  * Is node of 'id' submesh is halo node of 'current_id' submesh
  */
-bool decomp::isInterface(int x, int y, const vector<pair<size_t, vector<int>>> &submeshes, int Nx, int Ny,
-                         size_t current_id) {
-    if (!isHalo(x, y, submeshes, Nx, Ny, current_id) || !(x >= 0 && y >= 0 && x < Nx && y < Ny)) // not halo
+bool decomp::isInterface(int x, int y, const vector<pair<size_t, vector<int>>> &submeshes, int Nx, int Ny, int k3,
+                         int k4, size_t current_id) {
+    if (!isInterfaceNeighbour(x, y, submeshes, Nx, Ny, current_id) ||
+        !(x >= 0 && y >= 0 && x < Nx && y < Ny)) // not neigthbour
     {
-        if (isHalo(x + 1, y, submeshes, Nx, Ny, current_id) || isHalo(x, y + 1, submeshes, Nx, Ny, current_id) ||
-            isHalo(x + 1, y + 1, submeshes, Nx, Ny, current_id) || isHalo(x - 1, y, submeshes, Nx, Ny, current_id) ||
-            isHalo(x, y - 1, submeshes, Nx, Ny, current_id) || isHalo(x - 1, y - 1, submeshes, Nx, Ny, current_id) ||
-            isHalo(x - 1, y + 1, submeshes, Nx, Ny, current_id) ||
-            isHalo(x + 1, y - 1, submeshes, Nx, Ny, current_id)) {
+        if (isInterfaceNeighbour(x + 1, y, submeshes, Nx, Ny, current_id) ||
+            isInterfaceNeighbour(x, y + 1, submeshes, Nx, Ny, current_id) ||
+            isInterfaceNeighbour(x - 1, y, submeshes, Nx, Ny, current_id) ||
+            isInterfaceNeighbour(x, y - 1, submeshes, Nx, Ny, current_id)) {
             return true;
+        } else {
+            // Separately checking nodes (x + 1,y - 1) and (x - 1,y + 1)
+            int figuresLeft;
+            // checking nodes (x,y - 1) and (x - 1,y) as if they are triangle edges
+            if (isInterfaceNeighbour(x - 1, y + 1, submeshes, Nx, Ny, current_id)) {
+                figuresLeft = ((x - 1) * Ny + y) % (k3 + k4);
+            } else if (isInterfaceNeighbour(x + 1, y - 1, submeshes, Nx, Ny, current_id)) {
+                figuresLeft = (x * Ny + (y - 1)) % (k3 + k4);
+            }
+            return (figuresLeft >= 0 && figuresLeft < k4);
         }
     }
     return false;
@@ -165,14 +179,32 @@ bool decomp::isInterface(int x, int y, const vector<pair<size_t, vector<int>>> &
  *
  * For '*' node '#' will be checked if they are halo or not.
  */
-void decomp::addHaloNodes(int x, int y, const vector<pair<size_t, vector<int>>> &submeshes, int Nx, int Ny,
-                          size_t current_id, set<int> &haloes) {
+void decomp::addHaloNodes(int x, int y, const vector<pair<size_t, vector<int>>> &submeshes, int Nx, int Ny, int k3,
+                          int k4, size_t current_id, set<int> &haloes) {
     for (int i = -1; i <= 1; ++i) {
         for (int j = -1; j <= 1; ++j) {
             int newX = x + i;
             int newY = y + j;
-            if (newX >= 0 && newY >= 0 && newX < Nx && newY < Ny && isHalo(newX, newY, submeshes, Nx, Ny, current_id)) {
-                haloes.insert(newX * Ny + newY);
+            // Skipping these nodes...
+            if ((newX == x + 1 && newY == y + 1) || (newX == x - 1 && newY == y - 1)) {
+                continue;
+            } else if (newX >= 0 && newY >= 0 && newX < Nx && newY < Ny &&
+                       isInterfaceNeighbour(newX, newY, submeshes, Nx, Ny, current_id)) {
+                int figuresLeft;
+
+                // Separately checking nodes (x + 1,y - 1) and (x - 1,y + 1)
+                // checking nodes (x,y - 1) and (x - 1,y) as if they are triangle edges
+                if (newX == x - 1 && newY == y + 1) {
+                    figuresLeft = ((x - 1) * Ny + y) % (k3 + k4);
+                } else if (newX == x + 1 && newY == y - 1) {
+                    figuresLeft = (x * Ny + (y - 1)) % (k3 + k4);
+                } else {
+                    haloes.insert(newX * Ny + newY);
+                    continue;
+                }
+                if (figuresLeft >= 0 && figuresLeft < k4) {
+                    haloes.insert(newX * Ny + newY);
+                }
             }
         }
     }
