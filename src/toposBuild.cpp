@@ -418,56 +418,42 @@ VariableSizeMeshContainer<int> topos::build_topoNN_from_topoSN(const VariableSiz
 
 // topoNN_2
 VariableSizeMeshContainer<int> topos::build_topoNN_from_topoEN(const VariableSizeMeshContainer<int> &topoEN) {
-    int a, b, c, d, k, max_node;
+    int k, max_node = 0, t;
 
     k = topoEN.getBlockNumber();
-    max_node = topoEN[k - 1][topoEN.getBlockSize(k - 1) - 2] + 1;
+    //max_node = topoEN[k - 1][topoEN.getBlockSize(k - 1) - 2] + 1;
 
-    vector<vector<int>> arr(max_node, vector<int>(6, -1));
+    for (int i = 0; i < k; i++) {
+        t = topoEN.getBlockSize(i);
 
-    for (size_t i = 0; i < k; i++) {
-        a = topoEN[i][0];
-        b = topoEN[i][1];
-        c = topoEN[i][2];
+        for (int j = 0; j < t; j++) {
+            if (max_node < topoEN[i][j])
+                max_node = topoEN[i][j];
+        }
+    }
 
-        arr[a][b - a + 2] = b;
-        arr[b][a - b + 3] = a;
+    max_node++;
 
-        if (topoEN.getBlockSize(i) == 3) {
+    vector<map<int, int>> arr(max_node);
 
-            if (i + 1 != k && topoEN[i][2] == topoEN[i + 1][2]) {
-                arr[b][c - b + 2] = c;
-                arr[c][b - c + 3] = b;
-            } else {
-                arr[b][c - b + 3] = c;
-                arr[c][b - c + 2] = b;
-            }
+    for (int i = 0; i < k; i++) {
+        t = topoEN.getBlockSize(i);
 
-            arr[a][c - a + 2] = c;
-            arr[c][a - c + 3] = a;
-        } else {
-            d = topoEN[i][3];
-
-            arr[b][c - b + 2] = c;
-            arr[c][b - c + 3] = b;
-
-            arr[d][c - d + 2] = c;
-            arr[c][d - c + 3] = d;
-
-            arr[a][d - a + 2] = d;
-            arr[d][a - d + 3] = a;
+        for (int j = 0; j < t; j++) {
+            arr[topoEN[i][j]][topoEN[i][(j + 1) % t]] = 0;  
+            arr[topoEN[i][j]][topoEN[i][(j - 1 + t) % t]] = 0; 
         }
     }
 
     vector<int> BlockSize(max_node, 0);
     vector<int> temp;
 
-    for (size_t i = 0; i < max_node; i++)
-        for (size_t j = 0; j < 6; j++)
-            if (arr[i][j] != -1) {
-                ++BlockSize[i];
-                temp.push_back(arr[i][j]);
-            }
+    for (int i = 0; i < max_node; i++) {
+        for (map <int, int> :: iterator it = arr[i].begin(); it != arr[i].end(); it++) {
+            ++BlockSize[i];
+            temp.push_back(it->first);
+        }
+    }
 
     VariableSizeMeshContainer<int> topoNN(temp, BlockSize);
 
