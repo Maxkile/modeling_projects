@@ -9,14 +9,16 @@
 #include "IO.hpp"
 #include "VariableSizeMeshContainer.hpp"
 #include "decomposition.hpp"
+#include "parallel.hpp"
 #include "solver.hpp"
 #include "toposBuild.hpp"
 #include "vtkGenerator.hpp"
 
 using namespace std;
 
-int main(int argc, char **argv) {
+constexpr int self = 1;
 
+int parallel_test(int argc, char **argv) {
     int Nx, Ny, k3, k4;
     int Lx, Ly;
     int Px, Py;
@@ -29,6 +31,11 @@ int main(int argc, char **argv) {
     VariableSizeMeshContainer<int> topoNS;
     VariableSizeMeshContainer<int> topoNN_1;
     VariableSizeMeshContainer<int> topoNN_2;
+    ////////////////////////////////////////
+    map<int, int> neighbors;
+    vector<set<int>> send;
+    vector<set<int>> recv;
+    ////////////////////////////////////////
     int type = 0;
 
     NodesInfo *nodesInfo = nullptr; // used only in terminal input. Contains info about nodes to operate with
@@ -124,7 +131,7 @@ int main(int argc, char **argv) {
             size_t n_own; // number of own nodes in 'nodes' vector(offset to haloes)
 
             start = omp_get_wtime();
-            topoEN = topos::build_topoEN(Nx, Ny, k3, k4, 1, submeshes, G2L, L2G, nodes, n_own);
+            topoEN = topos::build_topoEN(Nx, Ny, k3, k4, self, submeshes, G2L, L2G, nodes, n_own);
             end = omp_get_wtime();
 
             decomp::formPart(part, nodes, submeshes, Nx, Ny);
@@ -132,10 +139,6 @@ int main(int argc, char **argv) {
             // Local mapping
             nodes = topos::toLocalIndexes(nodes, G2L);
             topoEN = topos::toLocalIndexes(topoEN, G2L);
-            for (auto i = G2L.cbegin(); i != G2L.cend(); ++i) {
-                cout << i->first << " ";
-            }
-            cout << endl;
 
             /////////////////////////////////////////////////Logging
             {
@@ -169,35 +172,54 @@ int main(int argc, char **argv) {
             ////////////////////////////////////////////////////////////
 
             // Deallocating
-            G2L.clear();
-            topoEN.printContainer();
+            // G2L.clear();
+
             // Allocating nodesInfo struct
             nodesInfo = new NodesInfo(nodes.size(), NodesType::ALL); // default
 
-            //            start = omp_get_wtime();
-            //            topoNE = topos::build_reverse_topo(topoEN);
-            //            end = omp_get_wtime();
-            cout << "\ttopoNE: " << end - start << " sec" << endl;
+            start = omp_get_wtime();
+            // topoNE = topos::build_reverse_topo(topoEN);
+            end = omp_get_wtime();
+            //            cout << "\ttopoNE: " << end - start << " sec" << endl;
 
             start = omp_get_wtime();
             topoSN = topos::build_topoSN(Nx, Ny, k3, k4);
             end = omp_get_wtime();
-            cout << "\ttopoSN: " << end - start << " sec" << endl;
+            //            cout << "\ttopoSN: " << end - start << " sec" << endl;
 
             start = omp_get_wtime();
-            topoNS = topos::build_reverse_topo(topoSN);
+            // topoNS = topos::build_reverse_topo(topoSN);
             end = omp_get_wtime();
-            cout << "\ttopoNS: " << end - start << " sec" << endl;
+            //            cout << "\ttopoNS: " << end - start << " sec" << endl;
 
             start = omp_get_wtime();
             topoNN_1 = topos::build_topoNN_from_topoSN(topoSN);
             end = omp_get_wtime();
-            cout << "\ttopoNN_1: " << end - start << " sec" << endl;
+            //            cout << "\ttopoNN_1: " << end - start << " sec" << endl;
 
             //            start = omp_get_wtime();
             //            topoNN_2 = topos::build_topoNN_from_topoEN(topoEN);
             //            end = omp_get_wtime();
-            cout << "\ttopoNN_2: " << end - start << " sec" << endl;
+            //            cout << "\ttopoNN_2: " << end - start << " sec" << endl;
+
+            ////////////////////////////////////////////////////////
+            topoNN_2 = topos::toGlobalIndexes(topoNN_1, L2G, n_own);
+            ////////////////////////////////////////////////////////
+
+            ///////////////////////////////////////////////////////
+            parallel::build_list_of_neighbors(neighbors, part, self);
+            ///////////////////////////////////////////////////////
+
+            ///////////////////////////////////////////////////////
+            /*
+            vector<vector<vector<int>>> result(2);
+            result = build_list_send_recv(topoNN_2, G2L, L2G, part, neighbors, n_own, self);
+            send = result[0];
+            recv = result[1];
+            result.clear();
+            */
+            parallel::build_list_send_recv(topoNN_2, G2L, L2G, part, neighbors, send, recv, n_own, self);
+            ///////////////////////////////////////////////////////
 
         } else if (!strcmp(argv[1], "--file")) {
             if (read_file(C, topoEN, topoSN)) {
@@ -213,16 +235,16 @@ int main(int argc, char **argv) {
             cout << "Expected \"--gen\" or \"--file\"" << endl;
             return 1;
         }
-
-        cout << "\nMemory:" << endl;
-        cout << "\tC:      " << (C).getTotalSize() * sizeof(double) << " bytes" << endl;
-        cout << "\ttopoEN: " << (topoEN).getTotalSize() * sizeof(int) << " bytes" << endl;
-        cout << "\ttopoNE: " << (topoNE).getTotalSize() * sizeof(int) << " bytes" << endl;
-        cout << "\ttopoSN: " << (topoSN).getTotalSize() * sizeof(int) << " bytes" << endl;
-        cout << "\ttopoNS: " << (topoNS).getTotalSize() * sizeof(int) << " bytes" << endl;
-        cout << "\ttopoNN_1: " << (topoNN_1).getTotalSize() * sizeof(int) << " bytes" << endl;
-        cout << "\ttopoNN_2: " << (topoNN_2).getTotalSize() * sizeof(int) << " bytes" << endl;
-
+        /*
+                cout << "\nMemory:" << endl;
+                cout << "\tC:      " << (C).getTotalSize() * sizeof(double) << " bytes" << endl;
+                cout << "\ttopoEN: " << (topoEN).getTotalSize() * sizeof(int) << " bytes" << endl;
+                cout << "\ttopoNE: " << (topoNE).getTotalSize() * sizeof(int) << " bytes" << endl;
+                cout << "\ttopoSN: " << (topoSN).getTotalSize() * sizeof(int) << " bytes" << endl;
+                cout << "\ttopoNS: " << (topoNS).getTotalSize() * sizeof(int) << " bytes" << endl;
+                cout << "\ttopoNN_1: " << (topoNN_1).getTotalSize() * sizeof(int) << " bytes" << endl;
+                cout << "\ttopoNN_2: " << (topoNN_2).getTotalSize() * sizeof(int) << " bytes" << endl;
+        */
         // output mesh
         if (!strcmp(argv[argc - 2], "--vtk")) {
             if (argv[argc - 1] == nullptr) {
@@ -238,20 +260,66 @@ int main(int argc, char **argv) {
         } else if (!strcmp(argv[argc - 1], "--out")) {
             write_file(C, topoEN, topoSN);
         } else if (!strcmp(argv[argc - 1], "--print")) {
-            cout << "\nCoordinates:\n" << endl;
-            C.printContainer();
-            cout << "\nTopoEN(local):\n" << endl;
-            topoEN.printContainer();
-            cout << "\nTopoNE:\n" << endl;
-            topoNE.printContainer();
-            cout << "\nTopoSN:\n" << endl;
-            topoSN.printContainer();
-            cout << "\nTopoNS:\n" << endl;
-            topoNS.printContainer();
+            // cout << "\nCoordinates:\n" << endl;
+            // C.printContainer();
+            // cout << "\nTopoEN(local):\n" << endl;
+            // topoEN.printContainer();
+            // cout << "\nTopoNE:\n" << endl;
+            // topoNE.printContainer();
+            // cout << "\nTopoSN:\n" << endl;
+            // topoSN.printContainer();
+            // cout << "\nTopoNS:\n" << endl;
+            // topoNS.printContainer();
             cout << "\nTopoNN_1:\n" << endl;
             topoNN_1.printContainer();
             cout << "\nTopoNN_2:\n" << endl;
-            topoNN_2.printContainer();
+            topoNN_2.printContainer(); ////////////////////////////////////////////////////
+
+            ////////////////////////////////////////////////////////
+            cout << endl << "List of neighbors: " << endl;
+            for (map<int, int>::iterator it = neighbors.begin(); it != neighbors.end(); ++it) {
+                cout << it->first << ": " << it->second << endl;
+            }
+
+            cout << endl << "List of send: " << endl;
+            for (unsigned i = 0; i < send.capacity(); ++i) {
+                cout << i << ": ";
+                for (set<int>::iterator it = send[i].begin(); it != send[i].end(); ++it) {
+                    cout << *it << " ";
+                }
+                cout << endl;
+            }
+            ////////////////////////////////////////////////////////
+            cout << endl << "List of recv: " << endl;
+            for (unsigned i = 0; i < recv.capacity(); ++i) {
+                cout << i << ": ";
+                for (set<int>::iterator it = recv[i].begin(); it != recv[i].end(); ++it) {
+                    cout << *it << " ";
+                }
+                cout << endl;
+            }
+
+            /*
+            ////////////////////////////////////////////////////////
+            cout << endl << "List of send: " << endl;
+            for (unsigned i = 0; i < send.capacity(); ++i){
+                cout << i << ": ";
+                for (unsigned j = 0; j < send[i].size(); ++j){
+                    cout << send[i][j] << " ";
+                }
+                cout << endl;
+            }
+           ////////////////////////////////////////////////////////
+            cout << endl << "List of recv: " << endl;
+            for (unsigned i = 0; i < recv.capacity(); ++i){
+                cout << i << ": ";
+                for (unsigned j = 0; j < recv[i].size(); ++j){
+                    cout << recv[i][j] << " ";
+                }
+                cout << endl;
+            }
+            ////////////////////////////////////////////////////////
+            */
 
             if (!type)
                 draw_mesh(Nx - 1, Ny - 1, k3, k4);

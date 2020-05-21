@@ -1,3 +1,6 @@
+#ifndef IO_HPP
+#define IO_HPP
+
 #pragma once
 #include "stdafx.hpp"
 
@@ -165,3 +168,5 @@ int read_file(FixedSizeMeshContainer<T1> &C, VariableSizeMeshContainer<T2> &topo
 
     return 0;
 }
+
+#endif

@@ -1,3 +1,6 @@
+#ifndef VARIABLECONTAINER_HPP
+#define VARIABLECONTAINER_HPP
+
 #pragma once
 #include "stdafx.hpp"
 
@@ -291,3 +294,5 @@ template <typename T> void VariableSizeMeshContainer<T>::clear() {
     IA.clear();
     V.clear();
 }
+
+#endif

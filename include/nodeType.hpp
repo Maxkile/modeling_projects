@@ -1,3 +1,6 @@
+#ifndef NODETYPE_HPP
+#define NODETYPE_HPP
+
 #pragma once
 enum class NodesType : unsigned int { OWN, HAlO, ALL };
 
@@ -16,3 +19,5 @@ struct NodesInfo {
     int nodesNumber;
     NodesType nodesType;
 };
+
+#endif

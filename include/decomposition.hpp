@@ -1,3 +1,6 @@
+#ifndef DECOMP_HPP
+#define DECOMP_HPP
+
 #pragma once
 
 #include <map>
@@ -59,3 +62,5 @@ void getGlobalIndexes(map<int, int> &G2L, vector<int> &global);
  */
 void getLocalIndexes(map<int, int> &G2L, vector<int> &local);
 } // namespace decomp
+
+#endif

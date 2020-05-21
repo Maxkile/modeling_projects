@@ -1,3 +1,6 @@
+#ifndef TOPOS_HPP
+#define TOPOS_HPP
+
 #pragma once
 #include "stdafx.hpp"
 
@@ -25,7 +28,12 @@ int computeMeshFiguresNumberLeft(int figCount1, int figCount2, int skippedElemsC
 
 VariableSizeMeshContainer<int> toLocalIndexes(const VariableSizeMeshContainer<int> &originEN, const mapping &G2L);
 
+VariableSizeMeshContainer<int> toGlobalIndexes(const VariableSizeMeshContainer<int> &topoNN, const vector<int> &L2G,
+                                               size_t n_own);
+
 vector<int> toLocalIndexes(const vector<int> &origin, const mapping &G2L);
+
+vector<int> toGlobalIndexes(const vector<int> &origin, const vector<int> &L2G);
 
 // topoEN
 // Also generates G2L,L2G,halo's,interfaces vectors required for topologies
@@ -53,3 +61,5 @@ VariableSizeMeshContainer<int> build_topoNN_from_topoSN(const VariableSizeMeshCo
 VariableSizeMeshContainer<int> build_topoNN_from_topoEN(const VariableSizeMeshContainer<int> &topoEN);
 
 } // namespace topos
+
+#endif

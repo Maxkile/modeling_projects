@@ -1,7 +1,7 @@
 #include "solver.hpp"
 
-int solveFromTopoNN(const VariableSizeMeshContainer<int> &topoNN, const char *type_matr, NodesInfo *nodesinfo,
-                    size_t threadsNumber) {
+int solver::solveFromTopoNN(const VariableSizeMeshContainer<int> &topoNN, const char *type_matr, NodesInfo *nodesinfo,
+                            size_t threadsNumber) {
     std::vector<double> x;
     std::ofstream fout;
     size_t n;

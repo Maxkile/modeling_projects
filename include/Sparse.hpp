@@ -1,3 +1,6 @@
+#ifndef SPARSE_HPP
+#define SPARSE_HPP
+
 #pragma once
 #include "stdafx.hpp"
 
@@ -581,3 +584,5 @@ public:
         return diagonal;
     }
 };
+
+#endif

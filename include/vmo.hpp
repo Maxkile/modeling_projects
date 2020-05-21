@@ -1,3 +1,6 @@
+#ifndef VMO_HPP
+#define VMO_HPP
+
 #pragma once
 #include "stdafx.hpp"
 
@@ -172,3 +175,5 @@ std::vector<double> conGradSolver(Sparse<M> &A, const std::vector<V> &b, NodesIn
     return x_prev;
 }
 } // namespace vmo
+
+#endif

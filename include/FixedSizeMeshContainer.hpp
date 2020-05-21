@@ -1,3 +1,6 @@
+#ifndef FIXEDCONTAINER_HPP
+#define FIXEDCONTAINER_HPP
+
 #pragma once
 #include "stdafx.hpp"
 
@@ -187,3 +190,5 @@ template <typename T> size_t FixedSizeMeshContainer<T>::getBlockSize() const { r
 template <typename T> size_t FixedSizeMeshContainer<T>::getTotalSize() const { return V.size(); }
 
 template <typename T> void FixedSizeMeshContainer<T>::clear() { V.clear(); }
+
+#endif

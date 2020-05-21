@@ -1,3 +1,6 @@
+#ifndef PLATFORM_HPP
+#define PLATFORM_HPP
+
 #pragma once
 
 #ifdef __linux__
@@ -23,5 +26,7 @@ using OPENMP_INDEX_TYPE = size_t;
 #include <sys/stat.h>
 
 using OPENMP_INDEX_TYPE = size_t;
+
+#endif
 
 #endif
