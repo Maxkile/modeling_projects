@@ -39,29 +39,49 @@ int topos::computeMeshFiguresNumberLeft(int figCount1, int figCount2, int skippe
 }
 
 VariableSizeMeshContainer<int> topos::toLocalIndexes(const VariableSizeMeshContainer<int> &originEN,
-                                                     map<int, int> &G2L) {
+                                                     const mapping &G2L) {
     vector<int> BlockSize;
+    vector<int> container;
     vector<int> temp;
+    container.reserve(originEN.getTotalSize());
     VariableSizeMeshContainer<int> local(temp, BlockSize);
+    bool notInMapping;
 
     for (size_t i = 0; i < originEN.getBlockNumber(); ++i) {
+        notInMapping = false;
         size_t blockSize = originEN.getBlockSize(i);
+        temp.reserve(blockSize);
+        temp.clear();
 
         for (size_t j = 0; j < blockSize; ++j) {
-            temp.push_back(G2L[originEN[i][j]]);
+            mapping::const_iterator iter = G2L.find(originEN[i][j]);
+            if (iter == G2L.cend()) { // if node exists in global topo, but not exists in mapping
+                notInMapping = true;
+                break;
+            } else {
+                temp.push_back(iter->second);
+            }
         }
-        BlockSize.push_back(blockSize);
+        if (notInMapping) { // if node not exists in global topo -> don't add all element in local topology
+            continue;
+        } else {
+            BlockSize.push_back(blockSize);
+            vmo::join(container, temp);
+        }
     }
 
-    local.add(temp, BlockSize);
+    local.add(container, BlockSize);
 
     return local;
 }
 
-vector<int> topos::toLocalIndexes(const vector<int> &origin, map<int, int> &G2L) {
+vector<int> topos::toLocalIndexes(const vector<int> &origin, const mapping &G2L) {
     vector<int> local(origin.size());
     for (size_t i = 0; i < origin.size(); ++i) {
-        local[i] = G2L[origin[i]];
+        mapping::const_iterator iter = G2L.find(origin[i]);
+        if (iter != G2L.cend()) {
+            local[i] = iter->second;
+        }
     }
     return local;
 }
@@ -72,9 +92,8 @@ vector<int> topos::toLocalIndexes(const vector<int> &origin, map<int, int> &G2L)
  * @nodes Global numeration for inner, halo and interface submesh nodes
  */
 VariableSizeMeshContainer<int> topos::build_topoEN(int Nx, int Ny, int k3, int k4, size_t submesh_id,
-                                                   const vector<pair<size_t, vector<int>>> &submeshes,
-                                                   map<int, int> &G2L, vector<int> &L2G, vector<int> &nodes,
-                                                   size_t &n_own) {
+                                                   const vector<pair<size_t, vector<int>>> &submeshes, mapping &G2L,
+                                                   vector<int> &L2G, vector<int> &nodes, size_t &n_own) {
     G2L.clear();
     L2G.clear();
     nodes.clear();

@@ -215,9 +215,8 @@ void decomp::addHaloNodes(int x, int y, const vector<pair<size_t, vector<int>>> 
  */
 void decomp::formPart(vector<int> &part, const vector<int> &nodes, const vector<pair<size_t, vector<int>>> &submeshes,
                       int Nx, int Ny) {
-    part.clear();
     size_t size = nodes.size();
-
+    part.clear();
     part.resize(size);
 
     for (size_t i = 0; i < size; ++i) {
