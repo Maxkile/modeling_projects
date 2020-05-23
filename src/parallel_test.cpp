@@ -131,10 +131,8 @@ int parallel_test(int argc, char **argv) {
             size_t n_own; // number of own nodes in 'nodes' vector(offset to haloes)
 
             start = omp_get_wtime();
-            topoEN = topos::build_topoEN(Nx, Ny, k3, k4, self, submeshes, G2L, L2G, nodes, n_own);
+            topoEN = topos::build_topoEN(Nx, Ny, k3, k4, self, submeshes, G2L, L2G, nodes, part, n_own);
             end = omp_get_wtime();
-
-            decomp::formPart(part, nodes, submeshes, Nx, Ny);
 
             // Local mapping
             nodes = topos::toLocalIndexes(nodes, G2L);

@@ -106,13 +106,6 @@ int main(int argc, char **argv) {
             }
             C.setBlockSize(2);
 
-            cout << "Time:" << endl;
-
-            start = omp_get_wtime();
-            topos::build_coord(C, Lx, Ly, Nx, Ny);
-            end = omp_get_wtime();
-            cout << "\tC:      " << end - start << " sec" << endl;
-
             map<int, int> G2L;
             vector<int> L2G;
 
@@ -121,46 +114,47 @@ int main(int argc, char **argv) {
             vector<int> nodes;
 
             vector<pair<size_t, vector<int>>> submeshes = decomp::decomposeMesh(Nx, Ny, Px, Py);
+            cout << "Decomposition into: " << endl;
+            for (auto it = submeshes.begin(); it != submeshes.end(); ++it) {
+                cout << it->first << ": " << it->second[0] << " " << it->second[1] << " " << it->second[2] << " "
+                     << it->second[3] << " " << endl;
+            }
+            cout << endl;
             size_t n_own; // number of own nodes in 'nodes' vector(offset to haloes)
 
             start = omp_get_wtime();
-            topoEN = topos::build_topoEN(Nx, Ny, k3, k4, 0, submeshes, G2L, L2G, nodes, n_own);
+            topoEN = topos::build_topoEN(Nx, Ny, k3, k4, 1, submeshes, G2L, L2G, nodes, part, n_own);
             end = omp_get_wtime();
-
-            decomp::formPart(part, nodes, submeshes, Nx, Ny);
 
             // Local mapping
             nodes = topos::toLocalIndexes(nodes, G2L);
             topoEN = topos::toLocalIndexes(topoEN, G2L);
-
             /////////////////////////////////////////////////Logging
             {
                 cout << "Part: " << endl;
                 for (auto i = part.begin(); i != part.end(); ++i) {
-                    std::cout << *i << " ";
+                    cout << *i << " ";
                 }
-                std::cout << std::endl;
+                cout << endl << endl;
 
                 cout << "Nodes vector in local numeration:" << endl;
                 cout << "Own nodes: " << n_own << ". Haloes nodes: " << nodes.size() - n_own << endl;
                 for (size_t i = 0; i < nodes.size(); ++i) {
-                    std::cout << nodes[i] << " ";
+                    cout << nodes[i] << " ";
                 }
-                std::cout << std::endl;
+                cout << endl << endl;
 
                 cout << "G2L: " << endl;
                 for (auto i = G2L.cbegin(); i != G2L.cend(); ++i) {
-                    std::cout << i->first << "->" << i->second << " ";
+                    cout << i->first << "->" << i->second << " ";
                 }
-                std::cout << std::endl;
+                cout << endl << endl;
 
                 cout << "L2G: " << endl;
                 for (size_t i = 0; i < L2G.size(); ++i) {
-                    std::cout << L2G[i] << " ";
+                    cout << L2G[i] << " ";
                 }
-                std::cout << std::endl;
-
-                cout << "\ttopoEN: " << end - start << " sec" << endl;
+                cout << endl << endl;
             }
             ////////////////////////////////////////////////////////////
 
@@ -168,6 +162,15 @@ int main(int argc, char **argv) {
             G2L.clear();
             // Allocating nodesInfo struct
             nodesInfo = new NodesInfo(nodes.size(), NodesType::ALL); // default
+
+            cout << "Time:" << endl;
+
+            start = omp_get_wtime();
+            topos::build_coord(C, Lx, Ly, Nx, Ny);
+            end = omp_get_wtime();
+            cout << "\tC:      " << end - start << " sec" << endl;
+
+            cout << "\ttopoEN: " << end - start << " sec" << endl;
 
             start = omp_get_wtime();
             topoNE = topos::build_reverse_topo(topoEN);
@@ -189,9 +192,9 @@ int main(int argc, char **argv) {
             end = omp_get_wtime();
             cout << "\ttopoNN_1: " << end - start << " sec" << endl;
 
-            //            start = omp_get_wtime();
-            //            topoNN_2 = topos::build_topoNN_from_topoEN(topoEN);
-            //            end = omp_get_wtime();
+            start = omp_get_wtime();
+            topoNN_2 = topos::build_topoNN_from_topoEN(topoEN);
+            end = omp_get_wtime();
             cout << "\ttopoNN_2: " << end - start << " sec" << endl;
 
         } else if (!strcmp(argv[1], "--file")) {
@@ -224,7 +227,7 @@ int main(int argc, char **argv) {
                 cout << "Expected <filename>" << endl;
                 return 1;
             } else {
-                std::string path = argv[argc - 1];
+                string path = argv[argc - 1];
                 vtkGenerator<double, int> vtk(path);
                 vtk.printInVTK(C, topoEN);
             }

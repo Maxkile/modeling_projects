@@ -40,7 +40,7 @@ vector<int> toGlobalIndexes(const vector<int> &origin, const vector<int> &L2G);
 // generating
 VariableSizeMeshContainer<int> build_topoEN(int Nx, int Ny, int k3, int k4, size_t submesh_id,
                                             const vector<pair<size_t, vector<int>>> &submeshes, mapping &G2L,
-                                            vector<int> &L2G, vector<int> &nodes, size_t &n_own);
+                                            vector<int> &L2G, vector<int> &nodes, vector<int> &part, size_t &n_own);
 
 // topoSN
 VariableSizeMeshContainer<int> build_topoSN(int Nx, int Ny, int k3, int k4);

@@ -28,8 +28,14 @@ pair<size_t, vector<int>> decomp::decomposeMesh(int Nx, int Ny, int Px, int Py, 
         int xLeft = (Nx - 1) % Px;
         int yLeft = (Ny - 1) % Py;
 
+        // Adding extra elements to submesh
         if ((px < xLeft) && (py < yLeft)) // add left element to coord[x] and coord[y]
         {
+            if (px - 1 >= 0) {
+                coord[0] = xPartSize * px + px + 1;
+            } else {
+                coord[0] = xPartSize * px + px;
+            }
             coord[0] = xPartSize * px + px;
             coord[1] = xPartSize * (px + 1) + px + 1;
             coord[2] = yPartSize * py + py;
@@ -54,6 +60,14 @@ pair<size_t, vector<int>> decomp::decomposeMesh(int Nx, int Ny, int Px, int Py, 
             coord[3] = yPartSize * (py + 1) + yLeft;
         }
 
+        // Including haloes to submesh. Expanding only to 'left' and 'up'. 'Right' and 'down' are already included as
+        // haloes.
+        if (coord[0] - 1 >= 0) {
+            coord[0] -= 1;
+        }
+        if (coord[2] - 1 >= 0) {
+            coord[2] -= 1;
+        }
         id = px * Py + py;
         return std::make_pair(id, coord);
     }
@@ -61,7 +75,8 @@ pair<size_t, vector<int>> decomp::decomposeMesh(int Nx, int Ny, int Px, int Py, 
 
 /*
  *  Mesh decomposing(only decart meshes are supported yet). Get all "ibeg, iend;
- * jbeg, jend" for all indexes [0,Px - 1],[0, Py - 1]
+ * jbeg, jend" for all indexes [0,Px - 1],[0, Py - 1].
+ * UPD: submeshes expaned to add halo nodes.
  */
 vector<pair<size_t, vector<int>>> decomp::decomposeMesh(int Nx, int Ny, int Px, int Py) {
 
@@ -75,7 +90,7 @@ vector<pair<size_t, vector<int>>> decomp::decomposeMesh(int Nx, int Ny, int Px, 
     } else {
         for (int px = 0; px < Px; ++px) {
             for (int py = 0; py < Py; ++py) {
-                submeshes.emplace_back(decomposeMesh(Nx, Ny, Px, Py, px, py));
+                submeshes.push_back(decomposeMesh(Nx, Ny, Px, Py, px, py));
             }
         }
         return submeshes;
@@ -86,7 +101,7 @@ vector<pair<size_t, vector<int>>> decomp::decomposeMesh(int Nx, int Ny, int Px, 
  * Get submmesh global id among submeshes
  */
 size_t decomp::getSubmeshIdByCoords(int x, int y, const vector<pair<size_t, vector<int>>> &submeshes, int Nx, int Ny) {
-    size_t submesh_id;
+    size_t current_id;
     for (auto iter = submeshes.begin(); iter != submeshes.end(); ++iter) {
         int beg_x = iter->second[0];
         int end_x = iter->second[1];
@@ -96,111 +111,60 @@ size_t decomp::getSubmeshIdByCoords(int x, int y, const vector<pair<size_t, vect
         if ((end_x == Nx - 1) && (end_y == Ny - 1)) // border
         {
             if ((x >= beg_x) && (x <= end_x) && (y >= beg_y) && (y <= end_y)) {
-                submesh_id = iter->first;
+                current_id = iter->first;
                 break;
             }
         } else if (end_x == Nx - 1) // border
         {
             if ((x >= beg_x) && (x <= end_x) && (y >= beg_y) && (y < end_y)) {
-                submesh_id = iter->first;
+                current_id = iter->first;
                 break;
             }
         } else if (end_y == Ny - 1) // border
         {
             if ((x >= beg_x) && (x < end_x) && (y >= beg_y) && (y <= end_y)) {
-                submesh_id = iter->first;
+                current_id = iter->first;
                 break;
             }
         } else {
             if ((x >= beg_x) && (x < end_x) && (y >= beg_y) && (y < end_y)) {
-                submesh_id = iter->first;
+                current_id = iter->first;
                 break;
             }
         }
     }
 
-    return submesh_id;
+    return current_id;
 }
 
 /*
- * Is node of 'id' submesh is just interface neighbour node of 'current_id'
- * submesh
+ *  Halo node is always on boarder of submesh
  *
  */
-
-bool decomp::isInterfaceNeighbour(int x, int y, const vector<pair<size_t, vector<int>>> &submeshes, int Nx, int Ny,
-                                  size_t current_id) {
-    if (x >= 0 && y >= 0 && x < Nx && y < Ny &&
-        !(decomp::getSubmeshIdByCoords(x, y, submeshes, Nx, Ny) == current_id)) {
-        return true;
+bool decomp::isHalo(int x, int y, const size_t submesh_id, const vector<pair<size_t, vector<int>>> &submeshes, int Nx,
+                    int Ny) {
+    if (x >= 0 && y >= 0 && x < Nx && y < Ny) {
+        return (getSubmeshIdByCoords(x, y, submeshes, Nx, Ny) != submesh_id);
     } else {
         return false;
     }
 }
-
 /*
  * Is node of 'id' submesh is halo node of 'current_id' submesh
  */
-bool decomp::isInterface(int x, int y, const vector<pair<size_t, vector<int>>> &submeshes, int Nx, int Ny,
-                         size_t current_id) {
-    if (!isInterfaceNeighbour(x, y, submeshes, Nx, Ny, current_id) ||
-        !(x >= 0 && y >= 0 && x < Nx && y < Ny)) // not halo
+bool decomp::isInterface(int x, int y, const size_t submesh_id, const vector<pair<size_t, vector<int>>> &submeshes,
+                         int Nx, int Ny) {
+    if (!isHalo(x, y, submesh_id, submeshes, Nx, Ny) || !(x >= 0 && y >= 0 && x < Nx && y < Ny)) // not halo
     {
-        if (isInterfaceNeighbour(x + 1, y, submeshes, Nx, Ny, current_id) ||
-            isInterfaceNeighbour(x, y + 1, submeshes, Nx, Ny, current_id) ||
-            isInterfaceNeighbour(x + 1, y + 1, submeshes, Nx, Ny, current_id) ||
-            isInterfaceNeighbour(x - 1, y, submeshes, Nx, Ny, current_id) ||
-            isInterfaceNeighbour(x, y - 1, submeshes, Nx, Ny, current_id) ||
-            isInterfaceNeighbour(x - 1, y - 1, submeshes, Nx, Ny, current_id) ||
-            isInterfaceNeighbour(x - 1, y + 1, submeshes, Nx, Ny, current_id) ||
-            isInterfaceNeighbour(x + 1, y - 1, submeshes, Nx, Ny, current_id)) {
+        if (isHalo(x + 1, y, submesh_id, submeshes, Nx, Ny) || isHalo(x, y + 1, submesh_id, submeshes, Nx, Ny) ||
+            isHalo(x + 1, y + 1, submesh_id, submeshes, Nx, Ny) || isHalo(x - 1, y, submesh_id, submeshes, Nx, Ny) ||
+            isHalo(x, y - 1, submesh_id, submeshes, Nx, Ny) || isHalo(x - 1, y - 1, submesh_id, submeshes, Nx, Ny) ||
+            isHalo(x - 1, y + 1, submesh_id, submeshes, Nx, Ny) ||
+            isHalo(x + 1, y - 1, submesh_id, submeshes, Nx, Ny)) {
             return true;
         }
     }
     return false;
-}
-
-/*
- * Considering that (cur_i,cur_j) node is an interface node check and add all
- * neighbour nodes to halo set. Also adds them to part set. Mesh is
- * cartesian-like
- *
- * - - - - -
- * - # # # -
- * - # * # -
- * - # # # -
- * - - - - -
- *
- * For '*' node '#' will be checked if they are halo or not.
- */
-void decomp::addHaloNodes(int x, int y, const vector<pair<size_t, vector<int>>> &submeshes, int Nx, int Ny,
-                          size_t current_id, set<int> &haloes) {
-    for (int i = -1; i <= 1; ++i) {
-        for (int j = -1; j <= 1; ++j) {
-            int newX = x + i;
-            int newY = y + j;
-            if (newX >= 0 && newY >= 0 && newX < Nx && newY < Ny &&
-                isInterfaceNeighbour(newX, newY, submeshes, Nx, Ny, current_id)) {
-                haloes.insert(newX * Ny + newY);
-            }
-        }
-    }
-}
-
-/*
- * Forming part vector from vector of nodes
- */
-void decomp::formPart(vector<int> &part, const vector<int> &nodes, const vector<pair<size_t, vector<int>>> &submeshes,
-                      int Nx, int Ny) {
-    size_t size = nodes.size();
-    part.clear();
-    part.resize(size);
-
-    for (size_t i = 0; i < size; ++i) {
-        int x = nodes[i] / Ny;
-        int y = nodes[i] % Ny;
-        part[i] = decomp::getSubmeshIdByCoords(x, y, submeshes, Nx, Ny);
-    }
 }
 
 /*

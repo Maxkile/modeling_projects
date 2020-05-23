@@ -102,19 +102,20 @@ vector<int> topos::toGlobalIndexes(const vector<int> &origin, const vector<int> 
  */
 VariableSizeMeshContainer<int> topos::build_topoEN(int Nx, int Ny, int k3, int k4, size_t submesh_id,
                                                    const vector<pair<size_t, vector<int>>> &submeshes, mapping &G2L,
-                                                   vector<int> &L2G, vector<int> &nodes, size_t &n_own) {
+                                                   vector<int> &L2G, vector<int> &nodes, vector<int> &part,
+                                                   size_t &n_own) {
     G2L.clear();
     L2G.clear();
     nodes.clear();
+    part.clear();
 
     vector<int> inner;
     vector<int> interface;
-    set<int> haloes;
+    vector<int> haloes;
 
     vector<int> BlockSize;
     vector<int> temp;
     VariableSizeMeshContainer<int> topoEN(temp, BlockSize);
-
     int beg_i = submeshes[submesh_id].second[0];
     int end_i = submeshes[submesh_id].second[1];
     int beg_j = submeshes[submesh_id].second[2];
@@ -124,99 +125,78 @@ VariableSizeMeshContainer<int> topos::build_topoEN(int Nx, int Ny, int k3, int k
         (end_i <= 0)) {
         cerr << "Wrong submesh parameters!" << endl;
         return topoEN;
-    } else if (submesh_id >= submeshes.size()) {
-        cerr << "Wrong submesh id!" << endl;
-        return topoEN;
     }
 
     int fullElementsSkipped = (Ny - 1) * beg_i + beg_j; // total number of elements is k3 + k4. So two
-                                                        // triangles is one element itself
+                                                        // triangles are one element themselves
     int meshFigureStructureCur = computeMeshFiguresNumberLeft(k3, k4, fullElementsSkipped, 0);
 
     int cur_i = beg_i;
     int cur_j = beg_j;
+    while (cur_i <= end_i) {
+        while (cur_j <= end_j) {
+            part.push_back(decomp::getSubmeshIdByCoords(cur_i, cur_j, submeshes, Nx, Ny));
 
-    while (cur_i < end_i) {
-        while (cur_j < end_j) {
-
-            if (decomp::isInterfaceNeighbour(cur_i, cur_j, submeshes, Nx, Ny, submesh_id)) {
-                haloes.insert(Ny * cur_i + cur_j);
-            } else if (decomp::isInterface(cur_i, cur_j, submeshes, Nx, Ny, submesh_id)) {
+            // Forming vectors
+            if (decomp::isHalo(cur_i, cur_j, submesh_id, submeshes, Nx, Ny)) {
+                haloes.push_back(Ny * cur_i + cur_j);
+            } else if (decomp::isInterface(cur_i, cur_j, submesh_id, submeshes, Nx, Ny)) {
                 interface.push_back(Ny * cur_i + cur_j);
-                decomp::addHaloNodes(cur_i, cur_j, submeshes, Nx, Ny, submesh_id, haloes);
             } else {
-                inner.push_back(Ny * cur_i + cur_j);
+                inner.push_back(Ny * cur_i + cur_j); // inner
             }
 
-            if (meshFigureStructureCur > k4) // triangle
-            {
-                temp.push_back(Ny * cur_i + cur_j);
-                temp.push_back(Ny * cur_i + cur_j + 1);
-                temp.push_back(Ny * (cur_i + 1) + cur_j);
-                BlockSize.push_back(TRIANGLE_NODES);
+            if (cur_j == end_j || cur_i == end_i) { // on the border, skip building topology element(on border)
+                cur_j++;
+                continue;
+            } else {
 
-                temp.push_back(Ny * cur_i + cur_j + 1);
-                temp.push_back(Ny * (cur_i + 1) + cur_j + 1);
-                temp.push_back(Ny * (cur_i + 1) + cur_j);
-                BlockSize.push_back(TRIANGLE_NODES);
-            } else if (meshFigureStructureCur <= k4) // square
-            {
-                temp.push_back(Ny * cur_i + cur_j);
-                temp.push_back(Ny * cur_i + cur_j + 1);
-                temp.push_back(Ny * (cur_i + 1) + cur_j + 1);
-                temp.push_back(Ny * (cur_i + 1) + cur_j);
+                // Building topology
+                if (meshFigureStructureCur > k4) // triangle
+                {
+                    temp.push_back(Ny * cur_i + cur_j);
+                    temp.push_back(Ny * cur_i + cur_j + 1);
+                    temp.push_back(Ny * (cur_i + 1) + cur_j);
+                    BlockSize.push_back(TRIANGLE_NODES);
 
-                BlockSize.push_back(SQUARE_NODES);
+                    temp.push_back(Ny * cur_i + cur_j + 1);
+                    temp.push_back(Ny * (cur_i + 1) + cur_j + 1);
+                    temp.push_back(Ny * (cur_i + 1) + cur_j);
+                    BlockSize.push_back(TRIANGLE_NODES);
+                } else if (meshFigureStructureCur <= k4) // square
+                {
+                    temp.push_back(Ny * cur_i + cur_j);
+                    temp.push_back(Ny * cur_i + cur_j + 1);
+                    temp.push_back(Ny * (cur_i + 1) + cur_j + 1);
+                    temp.push_back(Ny * (cur_i + 1) + cur_j);
+
+                    BlockSize.push_back(SQUARE_NODES);
+                }
+
+                meshFigureStructureCur--;
+                if (meshFigureStructureCur == 0) {
+                    meshFigureStructureCur = k3 + k4;
+                }
             }
-
-            meshFigureStructureCur--;
-            if (meshFigureStructureCur == 0) {
-                meshFigureStructureCur = k3 + k4;
-            }
-
             cur_j++;
         }
 
-        fullElementsSkipped = (Ny - (cur_j + 1)) + beg_j;
+        fullElementsSkipped = (Ny - cur_j) + beg_j;
         meshFigureStructureCur = computeMeshFiguresNumberLeft(k3, k4, fullElementsSkipped, meshFigureStructureCur);
-
-        // changing y coord
-        if (decomp::isInterfaceNeighbour(cur_i, cur_j, submeshes, Nx, Ny, submesh_id)) {
-            haloes.insert(Ny * cur_i + cur_j);
-        } else if (decomp::isInterface(cur_i, cur_j, submeshes, Nx, Ny, submesh_id)) {
-            interface.push_back(Ny * cur_i + cur_j);
-            decomp::addHaloNodes(cur_i, cur_j, submeshes, Nx, Ny, submesh_id, haloes);
-        } else {
-            inner.push_back(Ny * cur_i + cur_j);
-        }
 
         cur_j = beg_j;
         cur_i++;
     }
 
-    for (cur_j = beg_j; cur_j <= end_j; ++cur_j) // last y, we haven't visited it yet, but have to
-                                                 // store them too
-    {
-        if (decomp::isInterface(cur_i, cur_j, submeshes, Nx, Ny, submesh_id)) {
-            interface.push_back(Ny * cur_i + cur_j);
-            decomp::addHaloNodes(cur_i, cur_j, submeshes, Nx, Ny, submesh_id, haloes);
-        } else if (!decomp::isInterfaceNeighbour(cur_i, cur_j, submeshes, Nx, Ny, submesh_id)) {
-            inner.push_back(Ny * cur_i + cur_j);
-        }
-    }
-
-    // Own nodes number
+    // Forming own nodes number(n_own)
     n_own = inner.size() + interface.size();
     size_t n_all = n_own + haloes.size();
 
-    ///////////////////////////////////////////////Forming nodes vector
+    // Forming nodes vector
     nodes.reserve(n_all);
-    vmo::join(nodes, inner, interface);
-    for (auto it = haloes.cbegin(); it != haloes.cend(); ++it) {
-        nodes.push_back(*it);
-    }
+    vmo::join(nodes, inner, interface, haloes);
 
-    //////////////////////////////////////////////Forming G2L and L2G
+    // Forming G2L and L2G
     L2G.reserve(n_all);
     for (size_t i = 0; i < nodes.size(); ++i) {
         int item = nodes[i];
