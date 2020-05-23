@@ -1,0 +1,22 @@
+*.o
+main.cpp
+.vscode
+.vs
+rw_mesh
+plot.vtk
+out.vtk
+mesh
+test_vtk
+<<<<<<< HEAD
+test.cpp
+.vs
+=======
+prod
+.cmake
+build
+
+===============
+QT Creator
+==============
+>>>>>>> vstudio
+
