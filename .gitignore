@@ -2,6 +2,7 @@
 main.cpp
 .gitignore
 .vscode
+.vs
 rw_mesh
 plot.vtk
 out.vtk
@@ -9,6 +10,11 @@ out.txt
 mesh
 Makefile
 test_vtk
-test.cpp
-.vs
+prod
+.cmake
+build
+
+===============
+QT Creator
+==============
 
