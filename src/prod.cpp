@@ -124,7 +124,7 @@ int main(int argc, char **argv) {
             size_t n_own; // number of own nodes in 'nodes' vector(offset to haloes)
 
             start = omp_get_wtime();
-            topoEN = topos::build_topoEN(Nx, Ny, k3, k4, 1, submeshes, G2L, L2G, nodes, n_own);
+            topoEN = topos::build_topoEN(Nx, Ny, k3, k4, 0, submeshes, G2L, L2G, nodes, n_own);
             end = omp_get_wtime();
 
             decomp::formPart(part, nodes, submeshes, Nx, Ny);
@@ -132,10 +132,6 @@ int main(int argc, char **argv) {
             // Local mapping
             nodes = topos::toLocalIndexes(nodes, G2L);
             topoEN = topos::toLocalIndexes(topoEN, G2L);
-            for (auto i = G2L.cbegin(); i != G2L.cend(); ++i) {
-                cout << i->first << " ";
-            }
-            cout << endl;
 
             /////////////////////////////////////////////////Logging
             {
@@ -170,13 +166,12 @@ int main(int argc, char **argv) {
 
             // Deallocating
             G2L.clear();
-            topoEN.printContainer();
             // Allocating nodesInfo struct
             nodesInfo = new NodesInfo(nodes.size(), NodesType::ALL); // default
 
-            //            start = omp_get_wtime();
-            //            topoNE = topos::build_reverse_topo(topoEN);
-            //            end = omp_get_wtime();
+            start = omp_get_wtime();
+            topoNE = topos::build_reverse_topo(topoEN);
+            end = omp_get_wtime();
             cout << "\ttopoNE: " << end - start << " sec" << endl;
 
             start = omp_get_wtime();

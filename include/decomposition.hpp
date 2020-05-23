@@ -30,8 +30,7 @@ size_t getSubmeshIdByCoords(int x, int y, const vector<pair<size_t, vector<int>>
 /*
  * Is node of 'id' submesh is interface node of 'current_id' submesh
  */
-bool isInterface(int x, int y, const vector<pair<size_t, vector<int>>> &submeshes, int Nx, int Ny, int k3, int k4,
-                 size_t current_id);
+bool isInterface(int x, int y, const vector<pair<size_t, vector<int>>> &submeshes, int Nx, int Ny, size_t current_id);
 
 /*
  * Is node of 'id' submesh is halo node of 'current_id' submesh
@@ -43,8 +42,8 @@ bool isInterfaceNeighbour(int x, int y, const vector<pair<size_t, vector<int>>> 
  * Considering that (cur_i,cur_j) node is an interface node add all border to
  * halo set
  */
-void addHaloNodes(int x, int y, const vector<pair<size_t, vector<int>>> &submeshes, int Nx, int Ny, int k3, int k4,
-                  size_t current_id, set<int> &haloes);
+void addHaloNodes(int x, int y, const vector<pair<size_t, vector<int>>> &submeshes, int Nx, int Ny, size_t current_id,
+                  set<int> &haloes);
 
 /*
  * Forming part vector from inner,interface and halo nodes

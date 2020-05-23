@@ -43,36 +43,19 @@ int topos::computeMeshFiguresNumberLeft(int figCount1, int figCount2, int skippe
 VariableSizeMeshContainer<int> topos::toLocalIndexes(const VariableSizeMeshContainer<int> &originEN,
                                                      const mapping &G2L) {
     vector<int> BlockSize;
-    vector<int> container;
     vector<int> temp;
-    container.reserve(originEN.getTotalSize());
     VariableSizeMeshContainer<int> local(temp, BlockSize);
-    bool notInMapping;
 
     for (size_t i = 0; i < originEN.getBlockNumber(); ++i) {
-        notInMapping = false;
         size_t blockSize = originEN.getBlockSize(i);
-        temp.reserve(blockSize);
-        temp.clear();
 
         for (size_t j = 0; j < blockSize; ++j) {
-            mapping::const_iterator iter = G2L.find(originEN[i][j]);
-            if (iter == G2L.cend()) { // if node exists in global topo, but not exists in mapping
-                notInMapping = true;
-                break;
-            } else {
-                temp.push_back(iter->second);
-            }
+            temp.push_back(G2L.find(originEN[i][j])->second);
         }
-        if (notInMapping) { // if node not exists in global topo -> don't add all element in local topology
-            continue;
-        } else {
-            BlockSize.push_back(blockSize);
-            vmo::join(container, temp);
-        }
+        BlockSize.push_back(blockSize);
     }
 
-    local.add(container, BlockSize);
+    local.add(temp, BlockSize);
 
     return local;
 }
@@ -99,10 +82,7 @@ VariableSizeMeshContainer<int> topos::toGlobalIndexes(const VariableSizeMeshCont
 vector<int> topos::toLocalIndexes(const vector<int> &origin, const mapping &G2L) {
     vector<int> local(origin.size());
     for (size_t i = 0; i < origin.size(); ++i) {
-        mapping::const_iterator iter = G2L.find(origin[i]);
-        if (iter != G2L.cend()) {
-            local[i] = iter->second;
-        }
+        local[i] = G2L.find(origin[i])->second;
     }
     return local;
 }
@@ -161,9 +141,9 @@ VariableSizeMeshContainer<int> topos::build_topoEN(int Nx, int Ny, int k3, int k
 
             if (decomp::isInterfaceNeighbour(cur_i, cur_j, submeshes, Nx, Ny, submesh_id)) {
                 haloes.insert(Ny * cur_i + cur_j);
-            } else if (decomp::isInterface(cur_i, cur_j, submeshes, Nx, Ny, k3, k4, submesh_id)) {
+            } else if (decomp::isInterface(cur_i, cur_j, submeshes, Nx, Ny, submesh_id)) {
                 interface.push_back(Ny * cur_i + cur_j);
-                decomp::addHaloNodes(cur_i, cur_j, submeshes, Nx, Ny, k3, k4, submesh_id, haloes);
+                decomp::addHaloNodes(cur_i, cur_j, submeshes, Nx, Ny, submesh_id, haloes);
             } else {
                 inner.push_back(Ny * cur_i + cur_j);
             }
@@ -203,9 +183,9 @@ VariableSizeMeshContainer<int> topos::build_topoEN(int Nx, int Ny, int k3, int k
         // changing y coord
         if (decomp::isInterfaceNeighbour(cur_i, cur_j, submeshes, Nx, Ny, submesh_id)) {
             haloes.insert(Ny * cur_i + cur_j);
-        } else if (decomp::isInterface(cur_i, cur_j, submeshes, Nx, Ny, k3, k4, submesh_id)) {
+        } else if (decomp::isInterface(cur_i, cur_j, submeshes, Nx, Ny, submesh_id)) {
             interface.push_back(Ny * cur_i + cur_j);
-            decomp::addHaloNodes(cur_i, cur_j, submeshes, Nx, Ny, k3, k4, submesh_id, haloes);
+            decomp::addHaloNodes(cur_i, cur_j, submeshes, Nx, Ny, submesh_id, haloes);
         } else {
             inner.push_back(Ny * cur_i + cur_j);
         }
@@ -217,9 +197,9 @@ VariableSizeMeshContainer<int> topos::build_topoEN(int Nx, int Ny, int k3, int k
     for (cur_j = beg_j; cur_j <= end_j; ++cur_j) // last y, we haven't visited it yet, but have to
                                                  // store them too
     {
-        if (decomp::isInterface(cur_i, cur_j, submeshes, Nx, Ny, k3, k4, submesh_id)) {
+        if (decomp::isInterface(cur_i, cur_j, submeshes, Nx, Ny, submesh_id)) {
             interface.push_back(Ny * cur_i + cur_j);
-            decomp::addHaloNodes(cur_i, cur_j, submeshes, Nx, Ny, k3, k4, submesh_id, haloes);
+            decomp::addHaloNodes(cur_i, cur_j, submeshes, Nx, Ny, submesh_id, haloes);
         } else if (!decomp::isInterfaceNeighbour(cur_i, cur_j, submeshes, Nx, Ny, submesh_id)) {
             inner.push_back(Ny * cur_i + cur_j);
         }
