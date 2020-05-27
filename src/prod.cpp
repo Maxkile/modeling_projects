@@ -9,11 +9,14 @@
 #include "IO.hpp"
 #include "VariableSizeMeshContainer.hpp"
 #include "decomposition.hpp"
+#include "parallel.hpp"
 #include "solver.hpp"
 #include "toposBuild.hpp"
 #include "vtkGenerator.hpp"
 
 using namespace std;
+
+MPI_Comm MCW = MPI_COMM_WORLD;
 
 int main(int argc, char **argv) {
 
