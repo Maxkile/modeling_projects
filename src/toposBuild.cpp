@@ -111,15 +111,23 @@ VariableSizeMeshContainer<int> topos::build_topoEN(int Nx, int Ny, int k3, int k
 
     vector<int> inner;
     vector<int> interface;
-    vector<int> haloes;
+
+    vector<pair<size_t, vector<int>>> haloes;
+
+    // for sorting halo by owners
+    vector<int> haloes_left;
+    vector<int> haloes_up;
+    vector<int> haloes_right;
+    vector<int> haloes_down;
 
     vector<int> BlockSize;
     vector<int> temp;
     VariableSizeMeshContainer<int> topoEN(temp, BlockSize);
-    int beg_i = submeshes[submesh_id].second[0];
-    int end_i = submeshes[submesh_id].second[1];
-    int beg_j = submeshes[submesh_id].second[2];
-    int end_j = submeshes[submesh_id].second[3];
+
+    size_t beg_i = submeshes[submesh_id].second[0];
+    size_t end_i = submeshes[submesh_id].second[1];
+    size_t beg_j = submeshes[submesh_id].second[2];
+    size_t end_j = submeshes[submesh_id].second[3];
 
     if ((beg_i > Nx) || (end_i > Nx) || (beg_j > Ny) || (end_j > Ny) || (end_i <= 0) || (end_i <= 0) || (end_i <= 0) ||
         (end_i <= 0)) {
@@ -131,16 +139,16 @@ VariableSizeMeshContainer<int> topos::build_topoEN(int Nx, int Ny, int k3, int k
                                                         // triangles are one element themselves
     int meshFigureStructureCur = computeMeshFiguresNumberLeft(k3, k4, fullElementsSkipped, 0);
 
-    int cur_i = beg_i;
-    int cur_j = beg_j;
+    size_t cur_i = beg_i, cur_j = beg_j, node_id, haloes_size = 0;
     while (cur_i <= end_i) {
         while (cur_j <= end_j) {
-            part.push_back(decomp::getSubmeshIdByCoords(cur_i, cur_j, submeshes, Nx, Ny));
+            node_id = decomp::getSubmeshIdByCoords(cur_i, cur_j, submeshes, Nx, Ny);
 
             // Forming vectors
-            if (decomp::isHalo(cur_i, cur_j, submesh_id, submeshes, Nx, Ny)) {
-                haloes.push_back(Ny * cur_i + cur_j);
-            } else if (decomp::isInterface(cur_i, cur_j, submesh_id, submeshes, Nx, Ny)) {
+            if (decomp::isHalo(cur_i, cur_j, node_id, submesh_id, Nx, Ny)) {
+                decomp::insertHalo(haloes, Ny * cur_i + cur_j, node_id);
+                haloes_size++;
+            } else if (decomp::isInterface(cur_i, cur_j, node_id, submesh_id, Nx, Ny)) {
                 interface.push_back(Ny * cur_i + cur_j);
             } else {
                 inner.push_back(Ny * cur_i + cur_j); // inner
@@ -190,18 +198,22 @@ VariableSizeMeshContainer<int> topos::build_topoEN(int Nx, int Ny, int k3, int k
 
     // Forming own nodes number(n_own)
     n_own = inner.size() + interface.size();
-    size_t n_all = n_own + haloes.size();
+    size_t n_all = n_own + haloes_size;
 
     // Forming nodes vector
     nodes.reserve(n_all);
-    vmo::join(nodes, inner, interface, haloes);
-
-    // Forming G2L and L2G
+    vmo::join(nodes, inner, interface);
+    for (auto iter = haloes.cbegin(); iter != haloes.cend(); ++iter) {
+        vmo::join(nodes, iter->second);
+    }
+    // Forming G2L,L2G and part
     L2G.reserve(n_all);
+    part.reserve(n_all);
     for (size_t i = 0; i < nodes.size(); ++i) {
         int item = nodes[i];
         G2L.insert(pair<int, int>(item, i));
         L2G.push_back(item);
+        part.push_back(decomp::getSubmeshIdByCoords(item / Ny, item % Ny, submeshes, Nx, Ny));
     }
 
     topoEN.add(temp, BlockSize);

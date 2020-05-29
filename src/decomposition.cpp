@@ -138,33 +138,49 @@ size_t decomp::getSubmeshIdByCoords(int x, int y, const vector<pair<size_t, vect
 }
 
 /*
- *  Halo node is always on boarder of submesh
- *
- */
-bool decomp::isHalo(int x, int y, const size_t submesh_id, const vector<pair<size_t, vector<int>>> &submeshes, int Nx,
-                    int Ny) {
-    if (x >= 0 && y >= 0 && x < Nx && y < Ny) {
-        return (getSubmeshIdByCoords(x, y, submeshes, Nx, Ny) != submesh_id);
-    } else {
-        return false;
-    }
-}
-/*
  * Is node of 'id' submesh is halo node of 'current_id' submesh
  */
-bool decomp::isInterface(int x, int y, const size_t submesh_id, const vector<pair<size_t, vector<int>>> &submeshes,
-                         int Nx, int Ny) {
-    if (!isHalo(x, y, submesh_id, submeshes, Nx, Ny) || !(x >= 0 && y >= 0 && x < Nx && y < Ny)) // not halo
+bool decomp::isInterface(int x, int y, const size_t node_submesh_id, const size_t target_submesh_id, int Nx, int Ny) {
+    if (!isHalo(x, y, node_submesh_id, target_submesh_id, Nx, Ny) ||
+        !(x >= 0 && y >= 0 && x < Nx && y < Ny)) // not halo
     {
-        if (isHalo(x + 1, y, submesh_id, submeshes, Nx, Ny) || isHalo(x, y + 1, submesh_id, submeshes, Nx, Ny) ||
-            isHalo(x + 1, y + 1, submesh_id, submeshes, Nx, Ny) || isHalo(x - 1, y, submesh_id, submeshes, Nx, Ny) ||
-            isHalo(x, y - 1, submesh_id, submeshes, Nx, Ny) || isHalo(x - 1, y - 1, submesh_id, submeshes, Nx, Ny) ||
-            isHalo(x - 1, y + 1, submesh_id, submeshes, Nx, Ny) ||
-            isHalo(x + 1, y - 1, submesh_id, submeshes, Nx, Ny)) {
+        if (isHalo(x + 1, y, node_submesh_id, target_submesh_id, Nx, Ny) ||
+            isHalo(x, y + 1, node_submesh_id, target_submesh_id, Nx, Ny) ||
+            isHalo(x + 1, y + 1, node_submesh_id, target_submesh_id, Nx, Ny) ||
+            isHalo(x - 1, y, node_submesh_id, target_submesh_id, Nx, Ny) ||
+            isHalo(x, y - 1, node_submesh_id, target_submesh_id, Nx, Ny) ||
+            isHalo(x - 1, y - 1, node_submesh_id, target_submesh_id, Nx, Ny) ||
+            isHalo(x - 1, y + 1, node_submesh_id, target_submesh_id, Nx, Ny) ||
+            isHalo(x + 1, y - 1, node_submesh_id, target_submesh_id, Nx, Ny)) {
             return true;
         }
     }
     return false;
+}
+
+/*
+ *  Halo node is always on boarder of submesh
+ *
+ */
+bool decomp::isHalo(int x, int y, const size_t node_submesh_id, const size_t target_submesh_id, int Nx, int Ny) {
+    if (x >= 0 && y >= 0 && x < Nx && y < Ny) {
+        return (node_submesh_id != target_submesh_id);
+    } else {
+        return false;
+    }
+}
+
+/*
+ * Finds for vector with 'node_id' as a key and inserts node. If no such key was found, creates it and expands vector.
+ */
+void decomp::insertHalo(vector<pair<size_t, vector<int>>> &haloes, int node_pos, size_t node_id) {
+    for (auto iter = haloes.begin(); iter != haloes.end(); ++iter) {
+        if (iter->first == node_id) { // key exists
+            iter->second.push_back(node_pos);
+            return;
+        }
+    }
+    haloes.push_back(pair<size_t, vector<int>>(node_id, {node_pos}));
 }
 
 /*

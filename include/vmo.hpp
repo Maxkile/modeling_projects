@@ -10,6 +10,7 @@
 
 #include "Sparse.hpp"
 #include "nodeType.hpp"
+#include "parallel.hpp"
 #include "platformDependencies.hpp"
 
 // vector matrix operations: consider we are having same template arguments

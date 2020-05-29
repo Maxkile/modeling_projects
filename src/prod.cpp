@@ -126,8 +126,17 @@ int main(int argc, char **argv) {
             size_t n_own; // number of own nodes in 'nodes' vector(offset to haloes)
 
             start = omp_get_wtime();
-            topoEN = topos::build_topoEN(Nx, Ny, k3, k4, 1, submeshes, G2L, L2G, nodes, part, n_own);
+            topoEN = topos::build_topoEN(Nx, Ny, k3, k4, 2, submeshes, G2L, L2G, nodes, part, n_own);
             end = omp_get_wtime();
+
+            /////////////////////////////////////////////////Logging
+            cout << "Global nodes vector:" << endl;
+            cout << "Own nodes: " << n_own << ". Haloes nodes: " << nodes.size() - n_own << endl;
+            for (size_t i = 0; i < nodes.size(); ++i) {
+                cout << nodes[i] << " ";
+            }
+            cout << endl << endl;
+            ////////////////////////////////////////////////
 
             // Local mapping
             nodes = topos::toLocalIndexes(nodes, G2L);
@@ -140,7 +149,7 @@ int main(int argc, char **argv) {
                 }
                 cout << endl << endl;
 
-                cout << "Nodes vector in local numeration:" << endl;
+                cout << "Local nodes vector:" << endl;
                 cout << "Own nodes: " << n_own << ". Haloes nodes: " << nodes.size() - n_own << endl;
                 for (size_t i = 0; i < nodes.size(); ++i) {
                     cout << nodes[i] << " ";
