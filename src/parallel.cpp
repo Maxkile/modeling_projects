@@ -39,7 +39,7 @@ void parallel::build_list_send_recv(VariableSizeMeshContainer<int> &topoNN_2, ma
             key = G2L[topoNN_2[i][j]];
 
             if (part[key] != self_id) {
-                position = list_of_neighbors[part[key]]; // Порядковый номер соседа
+                position = list_of_neighbors[part[key]]; // neighbourn number
                 send[position].insert(L2G[i]);           // send
                 recv[position].insert(topoNN_2[i][j]);   // recv
             }
@@ -65,14 +65,11 @@ void parallel::update_halo(vector<int> &nodes, size_t n_own, map<int, int> &list
         send_size = send[j].size();
         recv_size = recv[j].size();
 
-        scheme[j].send_buf = nullptr; // need to deallicate after all
-        scheme[j].recv_buf = nullptr; // need to deallocate after all
-
         scheme[j].neighbour_id = it->first; // for whom
-        if (scheme[j].send_buf) {
+        if (scheme[j].send_buf && !scheme[j].send_buf) {
             scheme[j].recv_buf = new int(send[j].size()); // interface for neighbour
         }
-        if (scheme[j].recv_buf) {
+        if (scheme[j].recv_buf && !scheme[j].recv_buf) {
             scheme[j].recv_buf = new int(recv[j].size()); // halo for us
         }
         i = 0;
@@ -106,7 +103,7 @@ void parallel::update_halo(vector<int> &nodes, size_t n_own, map<int, int> &list
         exit(1);
     }
 
-    // considering halo nodes in x are sorted with owners order
+    // considering halo nodes in x are sorted by owners order
     size_t offset = 0;
     for (auto it = list_of_neighbors.cbegin(); it != list_of_neighbors.cend(); ++it, ++j) {
         recv_size = recv[j].size();
