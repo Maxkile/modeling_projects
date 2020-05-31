@@ -62,19 +62,21 @@ VariableSizeMeshContainer<int> topos::toLocalIndexes(const VariableSizeMeshConta
 
 VariableSizeMeshContainer<int> topos::toGlobalIndexes(const VariableSizeMeshContainer<int> &topoNN,
                                                       const vector<int> &L2G, size_t n_own) {
-    vector<int> blockSize;
+    vector<int> BlockSize;
     vector<int> temp;
+    VariableSizeMeshContainer<int> topoNN_2(temp, BlockSize);
 
-    VariableSizeMeshContainer<int> topoNN_2(temp, blockSize);
+    for (size_t i = 0; i < n_own; ++i) {
+        size_t blockSize = topoNN.getBlockSize(i);
 
-    for (unsigned i = 0; i < n_own; ++i) {
-        for (unsigned j = 0; j < topoNN.getBlockSize(L2G[i]); ++j)
-            temp.push_back(topoNN[L2G[i]][j]);
+        for (size_t j = 0; j < blockSize; ++j) {
+            temp.push_back(L2G[topoNN[i][j]]);
+        }
 
-        blockSize.push_back(topoNN.getBlockSize(L2G[i]));
+        BlockSize.push_back(blockSize);
     }
 
-    topoNN_2.add(temp, blockSize);
+    topoNN_2.add(temp, BlockSize);
 
     return topoNN_2;
 }
@@ -87,9 +89,10 @@ vector<int> topos::toLocalIndexes(const vector<int> &origin, const mapping &G2L)
     return local;
 }
 
-vector<int> topos::toGlobalIndexes(const vector<int> &origin, const vector<int> &L2G) {
-    vector<int> local(origin.size());
-    for (size_t i = 0; i < origin.size(); ++i) {
+vector<int> topos::toGlobalIndexes(const vector<int> &origin, const vector<int> &L2G, size_t n_own) {
+    size_t size = origin.size();
+    vector<int> local(size);
+    for (size_t i = 0; i < size; ++i) {
         local[i] = origin[L2G[i]];
     }
     return local;
@@ -142,13 +145,11 @@ VariableSizeMeshContainer<int> topos::build_topoEN(int Nx, int Ny, int k3, int k
     size_t cur_i = beg_i, cur_j = beg_j, node_id, haloes_size = 0;
     while (cur_i <= end_i) {
         while (cur_j <= end_j) {
-            node_id = decomp::getSubmeshIdByCoords(cur_i, cur_j, submeshes, Nx, Ny);
-
             // Forming vectors
-            if (decomp::isHalo(cur_i, cur_j, node_id, submesh_id, Nx, Ny)) {
+            if (decomp::isHalo(cur_i, cur_j, submeshes, submesh_id, Nx, Ny)) {
                 decomp::insertHalo(haloes, Ny * cur_i + cur_j, node_id);
                 haloes_size++;
-            } else if (decomp::isInterface(cur_i, cur_j, node_id, submesh_id, Nx, Ny)) {
+            } else if (decomp::isInterface(cur_i, cur_j, submeshes, submesh_id, Nx, Ny)) {
                 interface.push_back(Ny * cur_i + cur_j);
             } else {
                 inner.push_back(Ny * cur_i + cur_j); // inner
@@ -206,6 +207,7 @@ VariableSizeMeshContainer<int> topos::build_topoEN(int Nx, int Ny, int k3, int k
     for (auto iter = haloes.cbegin(); iter != haloes.cend(); ++iter) {
         vmo::join(nodes, iter->second);
     }
+
     // Forming G2L,L2G and part
     L2G.reserve(n_all);
     part.reserve(n_all);

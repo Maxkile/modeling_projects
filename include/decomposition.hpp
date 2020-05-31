@@ -32,15 +32,18 @@ size_t getSubmeshIdByCoords(int x, int y, const vector<pair<size_t, vector<int>>
 /*
  * Is node of 'id' submesh is interface node of 'current_id' submesh
  */
-bool isInterface(int x, int y, const size_t node_submesh_id, const size_t target_submesh_id, int Nx, int Ny);
+bool isInterface(int x, int y, const vector<pair<size_t, vector<int>>> &submeshes, const size_t target_submesh_id,
+                 int Nx, int Ny);
 
 /*
  * Is node of 'id' submesh is halo node of 'current_id' submesh
  */
-bool isHalo(int x, int y, const size_t node_submesh_id, const size_t target_submesh_id, int Nx, int Ny);
+bool isHalo(int x, int y, const vector<pair<size_t, vector<int>>> &submeshes, const size_t target_submesh_id, int Nx,
+            int Ny);
 
 /*
- * Finds for vector with 'node_id' as a key and inserts node. If no such key was found, creates it and expands vector.
+ * Finds for vector with 'node_id' as a key and inserts node. If no such key was found, creates it and expands
+ * vector.
  */
 void insertHalo(vector<pair<size_t, vector<int>>> &haloes, int node_pos, size_t node_id);
 

@@ -18,7 +18,7 @@ using namespace std;
 
 MPI_Comm MCW = MPI_COMM_WORLD;
 
-int main(int argc, char **argv) {
+int prod(int argc, char **argv) {
 
     int Nx, Ny, k3, k4;
     int Lx, Ly;
@@ -30,8 +30,8 @@ int main(int argc, char **argv) {
     VariableSizeMeshContainer<int> topoNE;
     VariableSizeMeshContainer<int> topoSN;
     VariableSizeMeshContainer<int> topoNS;
-    VariableSizeMeshContainer<int> topoNN_1;
-    VariableSizeMeshContainer<int> topoNN_2;
+    VariableSizeMeshContainer<int> topoNN;
+    //    VariableSizeMeshContainer<int> topoNN_2;
     int type = 0;
 
     NodesInfo *nodesInfo = nullptr; // used only in terminal input. Contains info about nodes to operate with
@@ -126,7 +126,7 @@ int main(int argc, char **argv) {
             size_t n_own; // number of own nodes in 'nodes' vector(offset to haloes)
 
             start = omp_get_wtime();
-            topoEN = topos::build_topoEN(Nx, Ny, k3, k4, 2, submeshes, G2L, L2G, nodes, part, n_own);
+            topoEN = topos::build_topoEN(Nx, Ny, k3, k4, 0, submeshes, G2L, L2G, nodes, part, n_own);
             end = omp_get_wtime();
 
             /////////////////////////////////////////////////Logging
@@ -184,28 +184,28 @@ int main(int argc, char **argv) {
 
             cout << "\ttopoEN: " << end - start << " sec" << endl;
 
-            start = omp_get_wtime();
-            topoNE = topos::build_reverse_topo(topoEN);
-            end = omp_get_wtime();
-            cout << "\ttopoNE: " << end - start << " sec" << endl;
+            //            start = omp_get_wtime();
+            //            topoNE = topos::build_reverse_topo(topoEN);
+            //            end = omp_get_wtime();
+            //            cout << "\ttopoNE: " << end - start << " sec" << endl;
+
+            //            start = omp_get_wtime();
+            //            topoSN = topos::build_topoSN(Nx, Ny, k3, k4);
+            //            end = omp_get_wtime();
+            //            cout << "\ttopoSN: " << end - start << " sec" << endl;
+
+            //            start = omp_get_wtime();
+            //            topoNS = topos::build_reverse_topo(topoSN);
+            //            end = omp_get_wtime();
+            //            cout << "\ttopoNS: " << end - start << " sec" << endl;
+
+            //            start = omp_get_wtime();
+            //            topoNN_1 = topos::build_topoNN_from_topoSN(topoSN);
+            //            end = omp_get_wtime();
+            //            cout << "\ttopoNN_1: " << end - start << " sec" << endl;
 
             start = omp_get_wtime();
-            topoSN = topos::build_topoSN(Nx, Ny, k3, k4);
-            end = omp_get_wtime();
-            cout << "\ttopoSN: " << end - start << " sec" << endl;
-
-            start = omp_get_wtime();
-            topoNS = topos::build_reverse_topo(topoSN);
-            end = omp_get_wtime();
-            cout << "\ttopoNS: " << end - start << " sec" << endl;
-
-            start = omp_get_wtime();
-            topoNN_1 = topos::build_topoNN_from_topoSN(topoSN);
-            end = omp_get_wtime();
-            cout << "\ttopoNN_1: " << end - start << " sec" << endl;
-
-            start = omp_get_wtime();
-            topoNN_2 = topos::build_topoNN_from_topoEN(topoEN);
+            topoNN = topos::build_topoNN_from_topoEN(topoEN);
             end = omp_get_wtime();
             cout << "\ttopoNN_2: " << end - start << " sec" << endl;
 
@@ -217,21 +217,21 @@ int main(int argc, char **argv) {
             type = 1;
             topoNE = topos::build_reverse_topo(topoEN);
             topoNS = topos::build_reverse_topo(topoSN);
-            topoNN_1 = topos::build_topoNN_from_topoSN(topoSN);
-            topoNN_2 = topos::build_topoNN_from_topoEN(topoEN);
+            topoNN = topos::build_topoNN_from_topoSN(topoSN);
+            //            topoNN_2 = topos::build_topoNN_from_topoEN(topoEN);
         } else {
             cout << "Expected \"--gen\" or \"--file\"" << endl;
             return 1;
         }
 
         cout << "\nMemory:" << endl;
-        cout << "\tC:      " << (C).getTotalSize() * sizeof(double) << " bytes" << endl;
+        //        cout << "\tC:      " << (C).getTotalSize() * sizeof(double) << " bytes" << endl;
         cout << "\ttopoEN: " << (topoEN).getTotalSize() * sizeof(int) << " bytes" << endl;
-        cout << "\ttopoNE: " << (topoNE).getTotalSize() * sizeof(int) << " bytes" << endl;
-        cout << "\ttopoSN: " << (topoSN).getTotalSize() * sizeof(int) << " bytes" << endl;
-        cout << "\ttopoNS: " << (topoNS).getTotalSize() * sizeof(int) << " bytes" << endl;
-        cout << "\ttopoNN_1: " << (topoNN_1).getTotalSize() * sizeof(int) << " bytes" << endl;
-        cout << "\ttopoNN_2: " << (topoNN_2).getTotalSize() * sizeof(int) << " bytes" << endl;
+        //        cout << "\ttopoNE: " << (topoNE).getTotalSize() * sizeof(int) << " bytes" << endl;
+        //        cout << "\ttopoSN: " << (topoSN).getTotalSize() * sizeof(int) << " bytes" << endl;
+        //        cout << "\ttopoNS: " << (topoNS).getTotalSize() * sizeof(int) << " bytes" << endl;
+        cout << "\ttopoNN: " << (topoNN).getTotalSize() * sizeof(int) << " bytes" << endl;
+        //        cout << "\ttopoNN_2: " << (topoNN_2).getTotalSize() * sizeof(int) << " bytes" << endl;
 
         // output mesh
         if (!strcmp(argv[argc - 2], "--vtk")) {
@@ -248,20 +248,20 @@ int main(int argc, char **argv) {
         } else if (!strcmp(argv[argc - 1], "--out")) {
             write_file(C, topoEN, topoSN);
         } else if (!strcmp(argv[argc - 1], "--print")) {
-            cout << "\nCoordinates:\n" << endl;
-            C.printContainer();
+            //            cout << "\nCoordinates:\n" << endl;
+            //            C.printContainer();
             cout << "\nTopoEN(local):\n" << endl;
             topoEN.printContainer();
-            cout << "\nTopoNE:\n" << endl;
-            topoNE.printContainer();
-            cout << "\nTopoSN:\n" << endl;
-            topoSN.printContainer();
-            cout << "\nTopoNS:\n" << endl;
-            topoNS.printContainer();
-            cout << "\nTopoNN_1:\n" << endl;
-            topoNN_1.printContainer();
-            cout << "\nTopoNN_2:\n" << endl;
-            topoNN_2.printContainer();
+            //            cout << "\nTopoNE:\n" << endl;
+            //            topoNE.printContainer();
+            //            cout << "\nTopoSN:\n" << endl;
+            //            topoSN.printContainer();
+            //            cout << "\nTopoNS:\n" << endl;
+            //            topoNS.printContainer();
+            cout << "\ntopoNN:\n" << endl;
+            topoNN.printContainer();
+            //            cout << "\nTopoNN_2:\n" << endl;
+            //            topoNN_2.printContainer();
 
             if (!type)
                 draw_mesh(Nx - 1, Ny - 1, k3, k4);
@@ -277,7 +277,7 @@ int main(int argc, char **argv) {
                 return 1;
             }
 
-            solver::solveFromTopoNN(topoNN_2, argv[argc - 2], nodesInfo, atoi(argv[argc - 1]));
+            solver::solveFromTopoNN(topoNN, argv[argc - 2], nodesInfo, atoi(argv[argc - 1]));
             delete nodesInfo;
 
         } else {

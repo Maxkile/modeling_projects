@@ -23,25 +23,25 @@ void parallel::build_list_of_neighbors(map<int, int> &list_of_neighbors, const v
     }
 }
 
-void parallel::build_list_send_recv(VariableSizeMeshContainer<int> &topoNN_2, map<int, int> &G2L, vector<int> &L2G,
+void parallel::build_list_send_recv(VariableSizeMeshContainer<int> &topoNN, map<int, int> &G2L, vector<int> &L2G,
                                     vector<int> &part, map<int, int> &list_of_neighbors, vector<set<int>> &send,
-                                    vector<set<int>> &recv, unsigned n_own, unsigned self_id) {
+                                    vector<set<int>> &recv, size_t n_own, int self_id) {
 
-    unsigned key, position;
+    size_t key, position;
     recv.clear();
     send.clear();
 
     recv.resize(list_of_neighbors.size());
     send.resize(list_of_neighbors.size());
 
-    for (size_t i = 0; i < topoNN_2.getBlockNumber(); ++i) {
-        for (size_t j = 0; j < topoNN_2.getBlockSize(i); ++j) {
-            key = G2L[topoNN_2[i][j]];
+    for (size_t i = 0; i < topoNN.getBlockNumber(); ++i) {
+        for (size_t j = 0; j < topoNN.getBlockSize(i); ++j) {
+            key = G2L[topoNN[i][j]];
 
             if (part[key] != self_id) {
                 position = list_of_neighbors[part[key]]; // neighbourn number
                 send[position].insert(L2G[i]);           // send
-                recv[position].insert(topoNN_2[i][j]);   // recv
+                recv[position].insert(topoNN[i][j]);     // recv
             }
         }
     }

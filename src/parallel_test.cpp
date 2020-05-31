@@ -16,9 +16,9 @@
 
 using namespace std;
 
-constexpr int self = 1;
+constexpr int self = 3;
 
-int parallel_test(int argc, char **argv) {
+int main(int argc, char **argv) {
     int Nx, Ny, k3, k4;
     int Lx, Ly;
     int Px, Py;
@@ -113,13 +113,6 @@ int parallel_test(int argc, char **argv) {
             }
             C.setBlockSize(2);
 
-            cout << "Time:" << endl;
-
-            start = omp_get_wtime();
-            topos::build_coord(C, Lx, Ly, Nx, Ny);
-            end = omp_get_wtime();
-            cout << "\tC:      " << end - start << " sec" << endl;
-
             map<int, int> G2L;
             vector<int> L2G;
 
@@ -128,11 +121,26 @@ int parallel_test(int argc, char **argv) {
             vector<int> nodes;
 
             vector<pair<size_t, vector<int>>> submeshes = decomp::decomposeMesh(Nx, Ny, Px, Py);
+            cout << "Decomposition into: " << endl;
+            for (auto it = submeshes.begin(); it != submeshes.end(); ++it) {
+                cout << it->first << ": " << it->second[0] << " " << it->second[1] << " " << it->second[2] << " "
+                     << it->second[3] << " " << endl;
+            }
+            cout << endl;
             size_t n_own; // number of own nodes in 'nodes' vector(offset to haloes)
 
             start = omp_get_wtime();
             topoEN = topos::build_topoEN(Nx, Ny, k3, k4, self, submeshes, G2L, L2G, nodes, part, n_own);
             end = omp_get_wtime();
+
+            /////////////////////////////////////////////////Logging
+            cout << "Global nodes vector:" << endl;
+            cout << "Own nodes: " << n_own << ". Haloes nodes: " << nodes.size() - n_own << endl;
+            for (size_t i = 0; i < nodes.size(); ++i) {
+                cout << nodes[i] << " ";
+            }
+            cout << endl << endl;
+            ////////////////////////////////////////////////
 
             // Local mapping
             nodes = topos::toLocalIndexes(nodes, G2L);
@@ -142,67 +150,52 @@ int parallel_test(int argc, char **argv) {
             {
                 cout << "Part: " << endl;
                 for (auto i = part.begin(); i != part.end(); ++i) {
-                    std::cout << *i << " ";
+                    cout << *i << " ";
                 }
-                std::cout << std::endl;
+                cout << endl << endl;
 
-                cout << "Nodes vector in local numeration:" << endl;
+                cout << "Local nodes vector:" << endl;
                 cout << "Own nodes: " << n_own << ". Haloes nodes: " << nodes.size() - n_own << endl;
                 for (size_t i = 0; i < nodes.size(); ++i) {
-                    std::cout << nodes[i] << " ";
+                    cout << nodes[i] << " ";
                 }
-                std::cout << std::endl;
+                cout << endl << endl;
 
                 cout << "G2L: " << endl;
                 for (auto i = G2L.cbegin(); i != G2L.cend(); ++i) {
-                    std::cout << i->first << "->" << i->second << " ";
+                    cout << i->first << "->" << i->second << " ";
                 }
-                std::cout << std::endl;
+                cout << endl << endl;
 
                 cout << "L2G: " << endl;
                 for (size_t i = 0; i < L2G.size(); ++i) {
-                    std::cout << L2G[i] << " ";
+                    cout << L2G[i] << " ";
                 }
-                std::cout << std::endl;
-
-                cout << "\ttopoEN: " << end - start << " sec" << endl;
+                cout << endl << endl;
             }
             ////////////////////////////////////////////////////////////
 
             // Deallocating
-            // G2L.clear();
-
+            //            G2L.clear();
             // Allocating nodesInfo struct
             nodesInfo = new NodesInfo(nodes.size(), NodesType::ALL); // default
 
-            start = omp_get_wtime();
-            // topoNE = topos::build_reverse_topo(topoEN);
-            end = omp_get_wtime();
+            //            start = omp_get_wtime();
+            //            topoNE = topos::build_reverse_topo(topoEN);
+            //            end = omp_get_wtime();
             //            cout << "\ttopoNE: " << end - start << " sec" << endl;
 
+            // local
             start = omp_get_wtime();
-            topoSN = topos::build_topoSN(Nx, Ny, k3, k4);
+            topoNN_1 = topos::build_topoNN_from_topoEN(topoEN);
             end = omp_get_wtime();
+
             //            cout << "\ttopoSN: " << end - start << " sec" << endl;
 
-            start = omp_get_wtime();
-            // topoNS = topos::build_reverse_topo(topoSN);
-            end = omp_get_wtime();
-            //            cout << "\ttopoNS: " << end - start << " sec" << endl;
-
-            start = omp_get_wtime();
-            topoNN_1 = topos::build_topoNN_from_topoSN(topoSN);
-            end = omp_get_wtime();
-            //            cout << "\ttopoNN_1: " << end - start << " sec" << endl;
-
             //            start = omp_get_wtime();
-            //            topoNN_2 = topos::build_topoNN_from_topoEN(topoEN);
+            topoNN_2 = topos::toGlobalIndexes(topoNN_1, L2G, n_own);
             //            end = omp_get_wtime();
             //            cout << "\ttopoNN_2: " << end - start << " sec" << endl;
-
-            ////////////////////////////////////////////////////////
-            topoNN_2 = topos::toGlobalIndexes(topoNN_1, L2G, n_own);
-            ////////////////////////////////////////////////////////
 
             ///////////////////////////////////////////////////////
             parallel::build_list_of_neighbors(neighbors, part, self);
@@ -260,17 +253,17 @@ int parallel_test(int argc, char **argv) {
         } else if (!strcmp(argv[argc - 1], "--print")) {
             // cout << "\nCoordinates:\n" << endl;
             // C.printContainer();
-            // cout << "\nTopoEN(local):\n" << endl;
-            // topoEN.printContainer();
+            cout << "\nTopoEN(local):\n" << endl;
+            topoEN.printContainer();
             // cout << "\nTopoNE:\n" << endl;
             // topoNE.printContainer();
             // cout << "\nTopoSN:\n" << endl;
             // topoSN.printContainer();
             // cout << "\nTopoNS:\n" << endl;
             // topoNS.printContainer();
-            cout << "\nTopoNN_1:\n" << endl;
+            cout << "\nTopoNN(local):\n" << endl;
             topoNN_1.printContainer();
-            cout << "\nTopoNN_2:\n" << endl;
+            cout << "\nTopoNN(global):\n" << endl;
             topoNN_2.printContainer(); ////////////////////////////////////////////////////
 
             ////////////////////////////////////////////////////////

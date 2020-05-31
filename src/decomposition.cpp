@@ -140,18 +140,18 @@ size_t decomp::getSubmeshIdByCoords(int x, int y, const vector<pair<size_t, vect
 /*
  * Is node of 'id' submesh is halo node of 'current_id' submesh
  */
-bool decomp::isInterface(int x, int y, const size_t node_submesh_id, const size_t target_submesh_id, int Nx, int Ny) {
-    if (!isHalo(x, y, node_submesh_id, target_submesh_id, Nx, Ny) ||
-        !(x >= 0 && y >= 0 && x < Nx && y < Ny)) // not halo
+bool decomp::isInterface(int x, int y, const vector<pair<size_t, vector<int>>> &submeshes,
+                         const size_t target_submesh_id, int Nx, int Ny) {
+    if (!isHalo(x, y, submeshes, target_submesh_id, Nx, Ny) || !(x >= 0 && y >= 0 && x < Nx && y < Ny)) // not halo
     {
-        if (isHalo(x + 1, y, node_submesh_id, target_submesh_id, Nx, Ny) ||
-            isHalo(x, y + 1, node_submesh_id, target_submesh_id, Nx, Ny) ||
-            isHalo(x + 1, y + 1, node_submesh_id, target_submesh_id, Nx, Ny) ||
-            isHalo(x - 1, y, node_submesh_id, target_submesh_id, Nx, Ny) ||
-            isHalo(x, y - 1, node_submesh_id, target_submesh_id, Nx, Ny) ||
-            isHalo(x - 1, y - 1, node_submesh_id, target_submesh_id, Nx, Ny) ||
-            isHalo(x - 1, y + 1, node_submesh_id, target_submesh_id, Nx, Ny) ||
-            isHalo(x + 1, y - 1, node_submesh_id, target_submesh_id, Nx, Ny)) {
+        if (isHalo(x + 1, y, submeshes, target_submesh_id, Nx, Ny) ||
+            isHalo(x, y + 1, submeshes, target_submesh_id, Nx, Ny) ||
+            isHalo(x + 1, y + 1, submeshes, target_submesh_id, Nx, Ny) ||
+            isHalo(x - 1, y, submeshes, target_submesh_id, Nx, Ny) ||
+            isHalo(x, y - 1, submeshes, target_submesh_id, Nx, Ny) ||
+            isHalo(x - 1, y - 1, submeshes, target_submesh_id, Nx, Ny) ||
+            isHalo(x - 1, y + 1, submeshes, target_submesh_id, Nx, Ny) ||
+            isHalo(x + 1, y - 1, submeshes, target_submesh_id, Nx, Ny)) {
             return true;
         }
     }
@@ -162,9 +162,10 @@ bool decomp::isInterface(int x, int y, const size_t node_submesh_id, const size_
  *  Halo node is always on boarder of submesh
  *
  */
-bool decomp::isHalo(int x, int y, const size_t node_submesh_id, const size_t target_submesh_id, int Nx, int Ny) {
+bool decomp::isHalo(int x, int y, const vector<pair<size_t, vector<int>>> &submeshes, const size_t target_submesh_id,
+                    int Nx, int Ny) {
     if (x >= 0 && y >= 0 && x < Nx && y < Ny) {
-        return (node_submesh_id != target_submesh_id);
+        return (getSubmeshIdByCoords(x, y, submeshes, Nx, Ny) != target_submesh_id);
     } else {
         return false;
     }

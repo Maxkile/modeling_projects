@@ -33,7 +33,7 @@ VariableSizeMeshContainer<int> toGlobalIndexes(const VariableSizeMeshContainer<i
 
 vector<int> toLocalIndexes(const vector<int> &origin, const mapping &G2L);
 
-vector<int> toGlobalIndexes(const vector<int> &origin, const vector<int> &L2G);
+vector<int> toGlobalIndexes(const vector<int> &origin, const vector<int> &L2G, size_t n_own);
 
 // topoEN
 // Also generates G2L,L2G,halo's,interfaces vectors required for topologies
