@@ -18,7 +18,7 @@ using namespace std;
 
 constexpr int self = 3;
 
-int main(int argc, char **argv) {
+int test(int argc, char **argv) {
     int Nx, Ny, k3, k4;
     int Lx, Ly;
     int Px, Py;

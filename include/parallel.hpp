@@ -41,7 +41,7 @@ void build_list_send_recv(VariableSizeMeshContainer<int> &topoNN, map<int, int> 
 void update_halo(vector<int> &nodes, size_t n_own, map<int, int> &list_of_neighbors, vector<set<int>> &send,
                  vector<set<int>> &recv, int proccessor_id, MPI_Comm mpi_comm = MPI_COMM_WORLD);
 
-int printf_master(int id, const char *fmt, ...);
+int printf_master(int id, const char *log, ...);
 } // namespace parallel
 
 #endif // PARALLEL_HPP

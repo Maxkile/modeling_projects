@@ -16,9 +16,14 @@
 
 using namespace std;
 
-MPI_Comm MCW = MPI_COMM_WORLD;
+constexpr size_t PROCESSOR_NAME_SIZE = 128;
 
-int prod(int argc, char **argv) {
+int mpi_initialized = 0;       // flag that MPI is initialized
+int proc_id = 0;               // process ID
+int proc_number = 1;           // number of processes
+MPI_Comm MCW = MPI_COMM_WORLD; // default communicator
+
+int main(int argc, char **argv) {
 
     int Nx, Ny, k3, k4;
     int Lx, Ly;
@@ -266,6 +271,39 @@ int prod(int argc, char **argv) {
             if (!type)
                 draw_mesh(Nx - 1, Ny - 1, k3, k4);
         } else if (!strcmp(argv[argc - 3], "--solver")) {
+
+            int mpi_res;
+            mpi_res = MPI_Init(&argc, &argv);
+            if (mpi_res != MPI_SUCCESS) {
+                cerr << "MPI_Init failed!" << endl;
+                exit(1);
+            }
+
+            mpi_res = MPI_Comm_rank(MCW, &proc_id);
+            if (mpi_res != MPI_SUCCESS) {
+                cerr << "Communicator rank failed!"
+                     << "Code: " << mpi_res << endl;
+                exit(1);
+            }
+
+            mpi_res = MPI_Comm_size(MCW, &proc_number);
+            if (mpi_res != MPI_SUCCESS) {
+                cerr << "Communicator size failed!"
+                     << "Code: " << mpi_res << endl;
+                exit(1);
+            }
+            char proc_name[PROCESSOR_NAME_SIZE];
+            int proc_name_size = PROCESSOR_NAME_SIZE;
+            mpi_res = MPI_Get_processor_name(proc_name, &proc_name_size);
+            if (mpi_res != MPI_SUCCESS) {
+                cerr << "Get processor name failed!"
+                     << "Code: " << mpi_res << endl;
+                exit(1);
+            }
+            mpi_initialized = 1;
+
+            parallel::printf_master(proc_id, "Number of processes: %d\n");
+            parallel::printf_master(proc_id, "Master process %d started on %d\n.", proc_id, proc_name);
 
             topoEN.clear();
             topoNE.clear();
