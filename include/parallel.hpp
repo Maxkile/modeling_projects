@@ -19,8 +19,8 @@ namespace parallel {
 struct Ne_scheme_bufs {
     size_t neighbour_id;
 
-    int *send_buf;
-    int *recv_buf;
+    double *send_buf;
+    double *recv_buf;
 
     Ne_scheme_bufs() : send_buf(nullptr), recv_buf(nullptr) {}
 
@@ -38,7 +38,7 @@ void build_list_send_recv(VariableSizeMeshContainer<int> &topoNN, map<int, int> 
                           vector<int> &part, map<int, int> &list_of_neighbors, vector<set<int>> &send,
                           vector<set<int>> &recv, size_t n_own, int self_id);
 
-void update_halo(vector<int> &nodes, size_t n_own, map<int, int> &list_of_neighbors, vector<set<int>> &send,
+void update_halo(vector<double> &nodes_values, size_t n_own, map<int, int> &list_of_neighbors, vector<set<int>> &send,
                  vector<set<int>> &recv, int proccessor_id, MPI_Comm mpi_comm = MPI_COMM_WORLD);
 
 int printf_master(int id, const char *log, ...);

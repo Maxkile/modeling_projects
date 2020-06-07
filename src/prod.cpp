@@ -317,6 +317,8 @@ int main(int argc, char **argv) {
 
             solver::solveFromTopoNN(topoNN, argv[argc - 2], nodesInfo, atoi(argv[argc - 1]));
             delete nodesInfo;
+            MPI_Finalize();
+            return 0;
 
         } else {
             cout << "Expected \"--vtk\" <filename> ,\"--file\" or \"--print\" or "
@@ -327,6 +329,7 @@ int main(int argc, char **argv) {
     } catch (exception &exc) {
         cout << exc.what() << endl;
         delete nodesInfo;
+        MPI_Finalize();
         return 1;
     }
 

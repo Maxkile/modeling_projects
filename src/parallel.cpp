@@ -47,8 +47,9 @@ void parallel::build_list_send_recv(VariableSizeMeshContainer<int> &topoNN, map<
     }
 }
 
-void parallel::update_halo(vector<int> &nodes, size_t n_own, map<int, int> &list_of_neighbors, vector<set<int>> &send,
-                           vector<set<int>> &recv, int processor_id, MPI_Comm mpi_comm) {
+// Considering 'send','recv' lists are in local numeration(if not -> G2L needed)
+void parallel::update_halo(vector<double> &nodes_values, size_t n_own, map<int, int> &list_of_neighbors,
+                           vector<set<int>> &send, vector<set<int>> &recv, int processor_id, MPI_Comm mpi_comm) {
 
     size_t scheme_size = list_of_neighbors.size();
     static vector<Ne_scheme_bufs> scheme(scheme_size);
@@ -67,21 +68,22 @@ void parallel::update_halo(vector<int> &nodes, size_t n_own, map<int, int> &list
 
         scheme[j].neighbour_id = it->first; // for whom
         if (scheme[j].send_buf) {
-            scheme[j].send_buf = new int(send[j].size()); // interface for neighbour
+            scheme[j].send_buf = new double(send_size); // interface for neighbour
         }
         if (scheme[j].recv_buf) {
-            scheme[j].recv_buf = new int(recv[j].size()); // halo for us
+            scheme[j].recv_buf = new double(recv_size); // halo for us
         }
         i = 0;
         for (auto send_it = send[j].cbegin(); send_it != send[j].cend(); ++send_it, ++i) {
-            scheme[j].send_buf[i] = *send_it;
+            scheme[j].send_buf[i] = nodes_values[*send_it];
         }
         i = 0;
         for (auto recv_it = send[j].cbegin(); recv_it != recv[j].cend(); ++recv_it, ++i) {
-            scheme[j].recv_buf[i] = *recv_it;
+            scheme[j].recv_buf[i] = nodes_values[*recv_it];
         }
 
-        mpi_res = MPI_Isend(scheme[j].send_buf, send_size, MPI_INT, scheme[j].neighbour_id, j, mpi_comm, &requests[j]);
+        mpi_res =
+            MPI_Isend(scheme[j].send_buf, send_size, MPI_DOUBLE, scheme[j].neighbour_id, j, mpi_comm, &requests[j]);
 
         if (mpi_res != MPI_SUCCESS) {
             cerr << "MPI Isend error: processor " << processor_id << " crashed! Exiting..." << endl;
@@ -89,7 +91,7 @@ void parallel::update_halo(vector<int> &nodes, size_t n_own, map<int, int> &list
         }
 
         mpi_res =
-            MPI_Irecv(scheme[j].recv_buf, recv_size, MPI_INT, scheme[j].neighbour_id, j, mpi_comm, &requests[j + 1]);
+            MPI_Irecv(scheme[j].recv_buf, recv_size, MPI_DOUBLE, scheme[j].neighbour_id, j, mpi_comm, &requests[j + 1]);
 
         if (mpi_res != MPI_SUCCESS) {
             cerr << "MPI Irevc error: processor " << processor_id << " crashed! Exiting..." << endl;
@@ -108,7 +110,7 @@ void parallel::update_halo(vector<int> &nodes, size_t n_own, map<int, int> &list
     for (auto it = list_of_neighbors.cbegin(); it != list_of_neighbors.cend(); ++it, ++j) {
         recv_size = recv[j].size();
         for (size_t k = 0; k < recv_size; ++k) {
-            nodes[n_own + offset + k] = scheme[j].recv_buf[k];
+            nodes_values[n_own + offset + k] = scheme[j].recv_buf[k];
         }
         offset += recv_size;
     }
