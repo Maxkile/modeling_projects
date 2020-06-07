@@ -77,7 +77,7 @@ void parallel::update_halo(vector<int> &nodes, size_t n_own, map<int, int> &list
             scheme[j].send_buf[i] = *send_it;
         }
         i = 0;
-        for (auto recv_it = send[j].cbegin(); recv_it != send[j].cend(); ++recv_it, ++i) {
+        for (auto recv_it = send[j].cbegin(); recv_it != recv[j].cend(); ++recv_it, ++i) {
             scheme[j].recv_buf[i] = *recv_it;
         }
 
