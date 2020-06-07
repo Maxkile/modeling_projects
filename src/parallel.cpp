@@ -66,10 +66,10 @@ void parallel::update_halo(vector<int> &nodes, size_t n_own, map<int, int> &list
         recv_size = recv[j].size();
 
         scheme[j].neighbour_id = it->first; // for whom
-        if (scheme[j].send_buf && !scheme[j].send_buf) {
+        if (scheme[j].send_buf) {
             scheme[j].recv_buf = new int(send[j].size()); // interface for neighbour
         }
-        if (scheme[j].recv_buf && !scheme[j].recv_buf) {
+        if (scheme[j].recv_buf) {
             scheme[j].recv_buf = new int(recv[j].size()); // halo for us
         }
         i = 0;
