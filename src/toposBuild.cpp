@@ -142,7 +142,7 @@ VariableSizeMeshContainer<int> topos::build_topoEN(int Nx, int Ny, int k3, int k
                                                         // triangles are one element themselves
     int meshFigureStructureCur = computeMeshFiguresNumberLeft(k3, k4, fullElementsSkipped, 0);
 
-    size_t cur_i = beg_i, cur_j = beg_j, node_id, haloes_size = 0;
+    size_t cur_i = beg_i, cur_j = beg_j, node_id = 0, haloes_size = 0;
     while (cur_i <= end_i) {
         while (cur_j <= end_j) {
             // Forming vectors

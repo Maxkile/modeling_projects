@@ -102,26 +102,24 @@ template <typename T> class SparseELL : public Sparse<T> {
         return maxRowOffset;
     }
 
-    void setPortraitValues() {
+    void setPortraitValues(const VariableSizeMeshContainer<int> &topoNN, vector<int> &L2G) {
         size_t index_i, index_j, diagIndex;
         diagIndex = 0;
-        T rowSum;
+
         for (size_t i = 0; i < this->denseRows; ++i) {
-            rowSum = 0;
             for (size_t j = i * this->rowOffset; j < (i + 1) * this->rowOffset; ++j) {
                 if (this->A[j] != 0) // padding
                 {
                     index_i = i;
                     index_j = this->JA[j];
                     if (index_i != index_j) {
-                        this->A[j] = sin(index_i + index_j);
-                        rowSum += abs(this->A[j]);
+                        this->A[j] = sin(L2G[index_i] + L2G[index_j]);
                     } else {
                         diagIndex = j;
                     }
                 }
             }
-            this->A[diagIndex] = rowSum * 1.5;
+			this->A[diagIndex] = (topoNN.getBlockSize(i) + 1) * 1.5;
         }
     }
 
@@ -174,7 +172,7 @@ public:
         }
     }
 
-    SparseELL(const VariableSizeMeshContainer<int> &topoNN) // from topo
+    SparseELL(const VariableSizeMeshContainer<int> &topoNN, vector<int> &L2G) // from topo
     {
         this->valuesSize = 0;
         this->denseRows = this->denseColumns = topoNN.getBlockNumber();
@@ -207,7 +205,7 @@ public:
             }
             temp.clear();
         }
-        setPortraitValues();
+        setPortraitValues(topoNN, L2G);
     }
 
     T **getDenseMatrix() const override {
@@ -306,28 +304,28 @@ template <typename T> class SparseCSR : public Sparse<T> {
 
     std::vector<size_t> IA; // sizes of A and JA are similar
 
-    void setPortraitValues() {
-        size_t index_i, index_j, diagIndex;
-        diagIndex = 0;
-        T rowSum;
-        for (size_t i = 0; i < this->denseRows; ++i) {
-            rowSum = 0;
-            for (size_t j = IA[i]; j < IA[i + 1]; ++j) {
-                index_i = i;
-                index_j = this->JA[j];
-                if (index_i != index_j) {
-                    this->A[j] = sin(index_i + index_j);
-                    rowSum += abs(this->A[j]);
-                } else {
-                    diagIndex = j;
-                }
-            }
-            this->A[diagIndex] = rowSum * 1.5;
-        }
-    }
+	void setPortraitValues(const VariableSizeMeshContainer<int> &topoNN, vector<int> &L2G) {
+		size_t index_i, index_j, diagIndex;
+		diagIndex = 0;
+
+		for (size_t i = 0; i < this->denseRows; ++i) {
+			for (size_t j = IA[i]; j < IA[i + 1]; ++j) {
+				index_i = i;
+				index_j = this->JA[j];
+				if (index_i != index_j) {
+					this->A[j] = sin(L2G[index_i] + L2G[index_j]);
+				}
+				else {
+					diagIndex = j;
+				}
+			}
+			this->A[diagIndex] = (topoNN.getBlockSize(i) + 1) * 1.5;
+		}
+	}
 
 public:
-    SparseCSR(const VariableSizeMeshContainer<int> &topoNN) {
+
+    SparseCSR(const VariableSizeMeshContainer<int> &topoNN, vector<int> &L2G) {
         std::vector<int> temp;
         this->denseColumns = this->denseRows = topoNN.getBlockNumber();
         int prev;
@@ -355,7 +353,8 @@ public:
         for (size_t i = 0; i < this->JA.size(); ++i) {
             this->A.push_back(1); // portrait
         }
-        setPortraitValues();
+
+        setPortraitValues(topoNN, L2G);
     }
 
     T **getDenseMatrix() const override {
@@ -381,7 +380,7 @@ public:
             std::cerr << "Incompatible sizes in spmv!" << std::endl;
         } else {
             double start = omp_get_wtime();
-#pragma omp parallel for num_threads(threadsNumber)
+			#pragma omp parallel for num_threads(threadsNumber)
             for (OPENMP_INDEX_TYPE i = 0; i < this->denseRows; i++) {
 
                 result[i] = 0;
@@ -451,32 +450,21 @@ template <typename T> class SparseCOO : public Sparse<T> {
 
     std::vector<size_t> IA; // sizes of IA, A and JA are similar
 
-    void setPortraitValues() {
+    void setPortraitValues(const VariableSizeMeshContainer<int> &topoNN, vector<int> &L2G) {
         size_t index_i, index_j, curRow, diagIndex;
-        T rowSum = 0;
-        diagIndex = 0;
-        curRow = 0;
+
         for (size_t i = 0; i < IA.size(); ++i) {
             index_i = IA[i];
             index_j = this->JA[i];
-            if (curRow != index_i) // next row
-            {
-                this->A[diagIndex] = rowSum * 1.5;
-                rowSum = 0;
-                curRow = index_i;
-            }
-            if (index_i != index_j) {
-                this->A[i] = sin(index_i + index_j);
-                rowSum += abs(this->A[i]);
-            } else {
-                diagIndex = i;
+			this->A[i] = sin(L2G[index_i] + L2G[index_j]);
+            if (index_i == index_j) {
+				this->A[i] = (topoNN.getBlockSize(index_i) + 1) * 1.5;
             }
         }
-        this->A[diagIndex] = rowSum * 1.5; // last
     }
 
 public:
-    SparseCOO(const VariableSizeMeshContainer<int> &topoNN) {
+    SparseCOO(const VariableSizeMeshContainer<int> &topoNN, vector<int> &L2G) {
         vector<int> temp;
 
         this->denseColumns = this->denseRows = topoNN.getBlockNumber();
@@ -500,7 +488,7 @@ public:
             temp.clear();
         }
 
-        setPortraitValues();
+        setPortraitValues(topoNN, L2G);
     };
 
     T **getDenseMatrix() const override {
@@ -527,7 +515,7 @@ public:
                 result[i] = 0;
 
             double start = omp_get_wtime();
-#pragma omp parallel for num_threads(threadsNumber)
+			#pragma omp parallel for num_threads(threadsNumber)
             for (OPENMP_INDEX_TYPE i = 0; i < IA.size(); ++i) {
                 result[IA[i]] += (this->A[i]) * x[this->JA[i]];
             }
@@ -544,7 +532,7 @@ public:
                 result[i] = 0;
 
             double start = omp_get_wtime();
-#pragma omp parallel for num_threads(threadsNumber)
+			#pragma omp parallel for num_threads(threadsNumber)
             for (OPENMP_INDEX_TYPE i = 0; i < IA.size(); ++i) {
                 result[IA[i]] += (this->A[i]) * x[this->JA[i]];
             }

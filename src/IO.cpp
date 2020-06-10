@@ -1,7 +1,7 @@
 // clang-format off
 #include "IO.hpp"
 
-void draw_mesh(int Nx, int Ny, int k3, int k4){
+void IO::draw_mesh(int Nx, int Ny, int k3, int k4){
     int cur_number_type = k3 > 0 ? k3:k4;
     int type_elem = k3 > 0 ? 0:1;
     int prev_cur_number = cur_number_type;
@@ -63,7 +63,7 @@ void draw_mesh(int Nx, int Ny, int k3, int k4){
     cout << "\n";
 }
 
-int num_elem(int Nx, int Ny, int k3, int k4){
+int IO::num_elem(int Nx, int Ny, int k3, int k4){
     int nE;
 
     nE = (2 * k3 + k4) * int(((Nx - 1) * (Ny - 1)) / (k3 + k4));
@@ -73,6 +73,75 @@ int num_elem(int Nx, int Ny, int k3, int k4){
         nE += 2 * (((Nx - 1) * (Ny - 1)) % (k3 + k4));
 
     return nE;
+}
+
+void IO::MPI_gather_write(const std::string &filename, const vector<double> &solution, const size_t n_own,
+                      const vector<int> &L2G, const size_t totalSize){
+    std::ofstream fout;
+
+    if (proc_id == MASTER_ID) {
+        printf(LINE_SEPARATOR);
+        cout << "\t\t Gather writing" << endl;
+        printf(LINE_SEPARATOR);
+        fout.flush();
+    }
+
+    parallel::Decision *total;
+    if (proc_id == MASTER_ID) {
+        total = new parallel::Decision[totalSize];
+    }
+
+    parallel::gather_all(total, solution, n_own, L2G);
+
+    if (proc_id == MASTER_ID) {
+        fout.open(filename);
+        fout << "Id: "
+             << "    |   "
+             << "Value:" << std::endl;
+        for (size_t i = 0; i < totalSize; ++i) {
+            fout << total[i].id << " " << total[i].answer << endl;
+        }
+        fout.flush();
+        fout.close();
+    }
+    parallel::barrier();
+    if (proc_id == MASTER_ID){
+        cout << "Gather writing done" << endl;
+        delete[] total;
+    }
+}
+
+void IO::MPI_self_write(const std::string& filename,const vector<double>& solution,const size_t n_own,const vector<int>& L2G){
+    std::ofstream fout;
+
+    if (proc_id == MASTER_ID) {
+        printf(LINE_SEPARATOR);
+        cout << "\t\t Self process writing" << endl;
+        printf(LINE_SEPARATOR);
+        fout.flush();
+    }
+    parallel::barrier();
+    for (int i = 0; i < proc_number; ++i) {
+        if (i == proc_id) {
+
+            std::cout << "Process: " << proc_id << " writing solution to file..." << endl;
+            if (proc_id == 0) {
+                fout.open(filename);
+                fout << "Id: "
+                     << "    |   "
+                     << "Value:" << std::endl;
+            } else {
+                fout.open(filename, ios_base::app);
+            }
+            for (size_t i = 0; i < n_own; i++) {
+                fout << L2G[i] << " " << solution[i] << endl;
+            }
+            cout << "Done" << endl;
+            fout.flush();
+            fout.close();
+        }
+        parallel::barrier();
+    }
 }
 
 // clang-format on

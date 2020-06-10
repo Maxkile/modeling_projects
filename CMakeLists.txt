@@ -26,7 +26,7 @@ set(HEADERS_COMPILE ${INCLUDE_DIRECTORIES}/nodeType.hpp ${INCLUDE_DIRECTORIES}/F
     ${INCLUDE_DIRECTORIES}/Sparse.hpp ${INCLUDE_DIRECTORIES}/stdafx.hpp
     ${INCLUDE_DIRECTORIES}/VariableSizeMeshContainer.hpp ${INCLUDE_DIRECTORIES}/vmo.hpp ${INCLUDE_DIRECTORIES}/vtkGenerator.hpp)
 
-set(SOURCES ${SRC_DIRECTORIES}/parallel_test.cpp ${SRC_DIRECTORIES}/parallel.cpp ${SRC_DIRECTORIES}/solver.cpp ${SRC_DIRECTORIES}/decomposition.cpp ${SRC_DIRECTORIES}/prod.cpp ${SRC_DIRECTORIES}/toposBuild.cpp
+set(SOURCES ${SRC_DIRECTORIES}/parallel.cpp ${SRC_DIRECTORIES}/solver.cpp ${SRC_DIRECTORIES}/decomposition.cpp ${SRC_DIRECTORIES}/main.cpp ${SRC_DIRECTORIES}/toposBuild.cpp
     ${SRC_DIRECTORIES}/vmo.cpp ${SRC_DIRECTORIES}/IO.cpp)
 
 

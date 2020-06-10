@@ -14,7 +14,8 @@
 
 namespace solver {
 int solveFromTopoNN(const VariableSizeMeshContainer<int> &topoNN, const char *type_matr, NodesInfo *nodesinfo,
-                    size_t threadsNumber = 4);
+                    map<int, int> &list_of_neighbors, vector<set<int>> &send, vector<set<int>> &recv, vector<int> &L2G,
+                    int n_own, size_t totalSize, size_t threadsNumber = 4);
 }
 
 #endif

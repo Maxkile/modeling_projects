@@ -7,6 +7,9 @@
 #include "FixedSizeMeshContainer.hpp"
 #include "VariableSizeMeshContainer.hpp"
 #include "platformDependencies.hpp"
+#include "vmo.hpp"
+
+namespace IO {
 
 void draw_mesh(int Nx, int Ny, int k3, int k4);
 
@@ -168,5 +171,12 @@ int read_file(FixedSizeMeshContainer<T1> &C, VariableSizeMeshContainer<T2> &topo
 
     return 0;
 }
+
+void MPI_gather_write(const std::string &filename, const vector<double> &solution, const size_t n_own,
+                      const vector<int> &L2G, const size_t totalSize);
+
+void MPI_self_write(const std::string &filename, const vector<double> &solution, const size_t n_own,
+                    const vector<int> &L2G);
+} // namespace IO
 
 #endif

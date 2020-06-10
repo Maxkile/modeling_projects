@@ -60,6 +60,9 @@ VariableSizeMeshContainer<int> build_topoNN_from_topoSN(const VariableSizeMeshCo
 // topoNN_2
 VariableSizeMeshContainer<int> build_topoNN_from_topoEN(const VariableSizeMeshContainer<int> &topoEN);
 
+// cut halo from topoNN
+VariableSizeMeshContainer<int> topoNN_halo_exception(VariableSizeMeshContainer<int> &topoNN, const vector<int> &L2G, unsigned n_own);
+
 } // namespace topos
 
 #endif
