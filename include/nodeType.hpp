@@ -12,7 +12,6 @@ enum class NodesType : unsigned int { OWN, HAlO, ALL };
 
 struct NodesInfo {
 
-    NodesInfo(){};
 
     NodesInfo(int number, NodesType type) : nodesNumber(number), nodesType(type){};
 

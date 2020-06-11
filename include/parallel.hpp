@@ -22,7 +22,8 @@ struct Ne_scheme_bufs {
     double *send_buf;
     double *recv_buf;
 
-    Ne_scheme_bufs() : send_buf(nullptr), recv_buf(nullptr) {}
+
+    Ne_scheme_bufs() :  send_buf(nullptr), recv_buf(nullptr) {}
 
     ~Ne_scheme_bufs();
 };

@@ -12,6 +12,9 @@ test_vtk
 prod
 .cmake
 build
+x64
+x32
+debug
 
 ===============
 QT Creator

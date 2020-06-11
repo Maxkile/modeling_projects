@@ -86,7 +86,7 @@ void IO::MPI_gather_write(const std::string &filename, const vector<double> &sol
         fout.flush();
     }
 
-    parallel::Decision *total;
+    parallel::Decision* total = nullptr;
     if (proc_id == MASTER_ID) {
         total = new parallel::Decision[totalSize];
     }

@@ -43,7 +43,7 @@ int main(int argc, char **argv) {
     vector<set<int>> send;
     vector<set<int>> recv;
     map<int, int> neighbors;
-    size_t n_own; // number of own nodes in 'nodes' vector(offset to haloes)
+    size_t n_own = 0; // number of own nodes in 'nodes' vector(offset to haloes)
     vector<int> nodes;
 
     int type = 0;
@@ -382,7 +382,7 @@ int main(int argc, char **argv) {
             parallel::barrier();
             start = omp_get_wtime();
 
-            size_t totalSize = Nx * Ny;
+            size_t totalSize = static_cast<size_t>(Nx) * Ny;
             solver::solveFromTopoNN(topoNN, argv[argc - 2], nodesInfo, neighbors, send, recv, L2G, n_own, totalSize,
                                     atoi(argv[argc - 1]));
             parallel::barrier();

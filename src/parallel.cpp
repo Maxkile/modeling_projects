@@ -99,8 +99,8 @@ void parallel::build_list_send_recv(VariableSizeMeshContainer<int> &topoNN, vect
 }
 
 void parallel::gather_all(Decision *total, const vector<double> &local_solution, size_t n_own, const vector<int> &L2G) {
-    int *recvcounts;
-    int *offsets;
+    int* recvcounts = nullptr;
+    int* offsets = nullptr;
     size_t size = 0;
 
     Decision *buf_send;

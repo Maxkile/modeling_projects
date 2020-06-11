@@ -5,12 +5,12 @@
 // coords
 void topos::build_coord(FixedSizeMeshContainer<double> &C, int Lx, int Ly, int Nx, int Ny) {
     vector<double> temp;
-    temp.reserve(2 * Nx * Ny);
+    temp.reserve(2 * static_cast<size_t>(Nx) * Ny);
 
     for (int i = 0; i < Ny; i++) {
         for (int j = 0; j < Nx; j++) {
-            temp.push_back((Lx / static_cast<double>(Nx - 1)) * i);
-            temp.push_back((Ly / static_cast<double>(Ny - 1)) * j);
+            temp.push_back((Lx / static_cast<double>(Nx) - 1) * i);
+            temp.push_back((Ly / static_cast<double>(Ny) - 1) * j);
         }
     }
     C.add(temp);
@@ -132,8 +132,8 @@ VariableSizeMeshContainer<int> topos::build_topoEN(int Nx, int Ny, int k3, int k
     size_t beg_j = submeshes[submesh_id].second[2];
     size_t end_j = submeshes[submesh_id].second[3];
 
-    if ((beg_i > Nx) || (end_i > Nx) || (beg_j > Ny) || (end_j > Ny) || (end_i <= 0) || (end_i <= 0) || (end_i <= 0) ||
-        (end_i <= 0)) {
+    if ((beg_i > Nx) || (end_i > Nx) || (beg_j > Ny) || (end_j > Ny) || (beg_i < 0) || (beg_j < 0) || (end_i <= 0) ||
+        (end_j <= 0)) {
         cerr << "Wrong submesh parameters!" << endl;
         return topoEN;
     }
@@ -364,10 +364,10 @@ VariableSizeMeshContainer<int> topos::build_topoBNS(const VariableSizeMeshContai
     vector<int> temp;
     int Nx, Ny;
     VariableSizeMeshContainer<int> topoBNS(temp, BlockSize);
-    for (Nx = 1; topo[Nx - 1][0] == 0; ++Nx) {
+    for (Nx = 1; topo[static_cast<size_t>(Nx) - 1][0] == 0; ++Nx) {
     }
 
-    for (Ny = 1; topo[Nx + Ny - 2][0] == 1; ++Ny) {
+    for (Ny = 1; topo[static_cast<size_t>(Nx + Ny) - 2][0] == 1; ++Ny) {
     }
 
     for (int i = 0; i < (Nx + Ny - 2) * 2; ++i) {
@@ -394,10 +394,10 @@ VariableSizeMeshContainer<int> topos::build_topoNN_from_topoSN(const VariableSiz
     int k;
 
     VariableSizeMeshContainer<int> topoNN(temp, BlockSize);
-    int nS = topoSN.getBlockNumber();
+    size_t nS = topoSN.getBlockNumber();
 
     int nN = 0;
-    for (int i = 0; i < nS; i++) {
+    for (size_t i = 0; i < nS; i++) {
         for (size_t j = 0; j < topoSN.getBlockSize(i); j++)
             if (topoSN[i][j] > nN)
                 nN = topoSN[i][j];
