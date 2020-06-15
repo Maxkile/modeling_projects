@@ -108,7 +108,7 @@ int main(int argc, char **argv) {
                  << endl;
             cout << "\t<threads>                 Threads to parallel vector matrix operation. By default the value is 4"
                  << endl;
-            cout << "\t<method>                  Which way to collect output decision vector. By default processes are "
+            cout << "\t<method>                  Which way to collect output solution vector. By default processes are "
                     "synchronized and output is blocking."
                     "\n\t\t\t\t  Type \"-gather\"  to gather output vectors to main process and sort before output"
                  << endl;
