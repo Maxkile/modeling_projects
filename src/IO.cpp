@@ -94,7 +94,7 @@ int IO::num_elem(int Nx, int Ny, int k3, int k4){
 void IO::mpi_gather_write(OutputType solverOutType, const vector<double>& solution, const size_t n_own,
     const vector<int>& L2G, const size_t totalSize) {
 
-    double time;
+    double time = 0;
 
     parallel::printf_master(proc_id, LINE_SEPARATOR, "\t\t Gather writing",LINE_SEPARATOR);
 

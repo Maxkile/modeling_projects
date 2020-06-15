@@ -23,7 +23,7 @@ int solver::solveFromTopoNN(const VariableSizeMeshContainer<int> &topoNN, NodesI
 
     Sparse<double> *matrix = nullptr;
 
-    parallel::printf_master(proc_id, "Threads number: ", solverInfo->threadsNumber);
+    parallel::printf_master(proc_id, "Threads number: %d\n", solverInfo->threadsNumber);
 
     switch (solverInfo->sparseMatrixType) {
     case SparseType::CSR:

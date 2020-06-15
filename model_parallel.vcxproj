@@ -37,8 +37,8 @@
   <ItemGroup>
     <ClCompile Include="src\decomposition.cpp" />
     <ClCompile Include="src\IO.cpp" />
-    <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\parallel.cpp" />
+    <ClCompile Include="src\prod.cpp" />
     <ClCompile Include="src\solver.cpp" />
     <ClCompile Include="src\toposBuild.cpp" />
     <ClCompile Include="src\vmo.cpp" />

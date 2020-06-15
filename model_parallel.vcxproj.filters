@@ -77,7 +77,7 @@
     <ClCompile Include="src\vmo.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
-    <ClCompile Include="src\main.cpp">
+    <ClCompile Include="src\prod.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
   </ItemGroup>
