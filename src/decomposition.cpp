@@ -68,7 +68,7 @@ pair<size_t, vector<int>> decomp::decomposeMesh(int Nx, int Ny, int Px, int Py, 
         if (coord[2] - 1 >= 0) {
             coord[2] -= 1;
         }
-        id = px * Py + py;
+        id = static_cast<size_t>(px) * Py + py;
         return std::make_pair(id, coord);
     }
 }
@@ -101,7 +101,7 @@ vector<pair<size_t, vector<int>>> decomp::decomposeMesh(int Nx, int Ny, int Px, 
  * Get submmesh global id among submeshes
  */
 size_t decomp::getSubmeshIdByCoords(int x, int y, const vector<pair<size_t, vector<int>>> &submeshes, int Nx, int Ny) {
-    size_t current_id;
+    size_t current_id = 0;
     for (auto iter = submeshes.begin(); iter != submeshes.end(); ++iter) {
         int beg_x = iter->second[0];
         int end_x = iter->second[1];

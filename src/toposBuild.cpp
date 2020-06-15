@@ -367,7 +367,7 @@ VariableSizeMeshContainer<int> topos::build_topoBNS(const VariableSizeMeshContai
     for (Nx = 1; topo[static_cast<size_t>(Nx) - 1][0] == 0; ++Nx) {
     }
 
-    for (Ny = 1; topo[static_cast<size_t>(Nx + Ny) - 2][0] == 1; ++Ny) {
+    for (Ny = 1; topo[static_cast<size_t>(Nx) + Ny - 2][0] == 1; ++Ny) {
     }
 
     for (int i = 0; i < (Nx + Ny - 2) * 2; ++i) {

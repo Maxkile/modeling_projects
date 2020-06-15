@@ -78,7 +78,7 @@ void parallel::build_list_send_recv(VariableSizeMeshContainer<int> &topoNN, vect
                                     map<int, int> &list_of_neighbors, vector<set<int>> &send, vector<set<int>> &recv,
                                     int self_id) {
 
-    size_t key, position;
+    int key, position;
     recv.clear();
     send.clear();
 

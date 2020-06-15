@@ -10,7 +10,7 @@ template <> void solver::defaultInitB<int>(vector<double> &b, const vector<int> 
     size_t n = source.size();
     b.resize(n);
     for (size_t i = 0; i < n; i++) {
-        b[i] = 1 + source[i];
+        b[i] = static_cast<double>(1) + source[i];
     }
 }
 
@@ -44,7 +44,7 @@ int solver::solveFromTopoNN(const VariableSizeMeshContainer<int> &topoNN, NodesI
     defaultInitB(b, L2G);
 
     startTime = omp_get_wtime();
-    x = vmo::conGradSolver(*matrix, b, list_of_neighbors, send, recv, n_own, nodesinfo, solverInfo->threadsNumber);
+    x = vmo::conGradSolver(matrix, b, list_of_neighbors, send, recv, n_own, nodesinfo, solverInfo->threadsNumber);
     timeSpent = omp_get_wtime() - startTime;
 
     cout.flush();

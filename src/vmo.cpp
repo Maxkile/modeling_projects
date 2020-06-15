@@ -39,11 +39,11 @@ double vmo::norm(const std::vector<double> &vec, int n_own, NodesInfo *nodesinfo
 
 // Think that A = A^(T) > 0
 template <>
-std::vector<double> vmo::conGradSolver<double, double>(Sparse<double> &A, const std::vector<double> &b,
+std::vector<double> vmo::conGradSolver<double, double>(const Sparse<double> *A, const std::vector<double> &b,
                                                        map<int, int> &list_of_neighbors, vector<set<int>> &send,
                                                        vector<set<int>> &recv, int n_own, NodesInfo *nodesinfo,
                                                        size_t threadsNum, size_t n_max, double eps) {
-    unsigned count = A.getDenseColumns();
+    unsigned count = A->getDenseColumns();
     std::vector<double> x_prev(count);
     double timeSPmv = 0;
     double r_prev_norm;
@@ -55,7 +55,7 @@ std::vector<double> vmo::conGradSolver<double, double>(Sparse<double> &A, const 
     } else {
         size_t size = count;
 
-        std::vector<double> diagonal = A.getDiagonal();
+        std::vector<double> diagonal = A->getDiagonal();
         std::vector<double> rev_M(diagonal.size());
 
         // forming preconditioning matrix - M
@@ -96,7 +96,7 @@ std::vector<double> vmo::conGradSolver<double, double>(Sparse<double> &A, const 
             }
 
             parallel::update_halo(p_cur, list_of_neighbors, send, recv, proc_id, MCW);
-            A.spmv(p_cur, q, timeSPmv, nodesinfo, threadsNum);
+            A->spmv(p_cur, q, timeSPmv, nodesinfo, threadsNum);
             alpha = delta_cur / dot(p_cur, q, n_own, nodesinfo);
 
             multiply(p_cur, multiplyResult, alpha, threadsNum);

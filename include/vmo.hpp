@@ -79,7 +79,7 @@ void join(vector<VT> &target, const vector<VT> &arg, const vector<Args> &... arg
 
 // Think that A = A^(T) > 0
 template <typename M, typename V>
-std::vector<double> conGradSolver(Sparse<M> &A, const std::vector<V> &b, map<int, int> &list_of_neighbors,
+std::vector<double> conGradSolver(const Sparse<M>* A, const std::vector<V> &b, map<int, int> &list_of_neighbors,
                                   vector<set<int>> &send, vector<set<int>> &recv, int n_own, NodesInfo *nodesinfo,
                                   size_t threadsNum = 4, size_t n_max = 100, double eps = 0.0000001);
 } // namespace vmo
