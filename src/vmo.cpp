@@ -47,7 +47,6 @@ std::vector<double> vmo::conGradSolver<double, double>(Sparse<double> &A, const 
     std::vector<double> x_prev(count);
     double timeSPmv = 0;
     double r_prev_norm;
-    int mpi_res;
 
     if (count != b.size()) {
         parallel::printf_master(proc_id, "Incompatible sizes in Solver!\n");

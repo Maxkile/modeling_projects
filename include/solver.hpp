@@ -9,13 +9,16 @@
 
 #include "IO.hpp"
 #include "Sparse.hpp"
+#include "solverInfo.hpp"
 #include "toposBuild.hpp"
 #include "vmo.hpp"
 
 namespace solver {
-int solveFromTopoNN(const VariableSizeMeshContainer<int> &topoNN, const char *type_matr, NodesInfo *nodesinfo,
+template <typename T> void defaultInitB(vector<double> &b, const vector<T> &source);
+
+int solveFromTopoNN(const VariableSizeMeshContainer<int> &topoNN, NodesInfo *nodesinfo,
                     map<int, int> &list_of_neighbors, vector<set<int>> &send, vector<set<int>> &recv, vector<int> &L2G,
-                    int n_own, size_t totalSize, size_t threadsNumber = 4);
-}
+                    int n_own, size_t totalSize, double &timeSpent, SolverInfo *solverInfo);
+} // namespace solver
 
 #endif

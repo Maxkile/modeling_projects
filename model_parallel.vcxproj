@@ -26,6 +26,7 @@
     <ClInclude Include="include\parallel.hpp" />
     <ClInclude Include="include\platformDependencies.hpp" />
     <ClInclude Include="include\solver.hpp" />
+    <ClInclude Include="include\SolverInfo.hpp" />
     <ClInclude Include="include\Sparse.hpp" />
     <ClInclude Include="include\stdafx.hpp" />
     <ClInclude Include="include\toposBuild.hpp" />

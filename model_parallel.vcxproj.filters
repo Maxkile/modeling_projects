@@ -54,6 +54,9 @@
     <ClInclude Include="include\vtkGenerator.hpp">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
+    <ClInclude Include="include\SolverInfo.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\decomposition.cpp">

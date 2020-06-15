@@ -85,15 +85,17 @@ int main(int argc, char **argv) {
     mpi_initialized = 1;
     //----------------------------------------------//
 
-    if ((argc == 1) || !((argc == 5) || (argc == 11) || (argc == 12) || (argc == 7) || (argc == 13)) ||
-        (strcmp(argv[argc - 1], "--print") && strcmp(argv[argc - 1], "--out") && strcmp(argv[argc - 2], "--out") &&
-         strcmp(argv[argc - 2], "--vtk") && strcmp(argv[argc - 3], "--solver"))) {
-
+    if ((argc == 1) ||
+        !((argc == 5) || (argc == 11) || (argc == 12) || (argc == 7) ||
+          (strcmp(argv[argc - 1], "--print") && strcmp(argv[argc - 1], "--out") && strcmp(argv[argc - 2], "--out") &&
+               strcmp(argv[argc - 2], "--vtk") && strcmp(argv[argc - 3], "--solver") ||
+           strcmp(argv[argc - 4], "--solver") || strcmp(argv[argc - 5], "--solver")))) {
         if (proc_id == MASTER_ID) {
+
             cout << "Mesh builder and solver v0.2 beta" << endl;
             cout << "Usage:  --gen <Lx> <Ly> <Nx> <Ny> <k3> <k4> <Px> <Py>| --file "
                     "\n\t--print | --out (<path>) | --vtk <filename> | --solver "
-                    "<format> <threads>"
+                    "<sparse> <threads> <method> <output>"
                  << endl;
             cout << "Commands:" << endl;
             cout << "\t--gen                     Generate mesh" << endl;
@@ -119,10 +121,17 @@ int main(int argc, char **argv) {
                     "default, write to current directory."
                  << endl;
             cout << "\t<filename>                Vtk output file name" << endl;
-            cout << "\t<format>                  Sparse matrix format. Choose between "
+            cout << "\t<sparse>                  Sparse matrix format. Choose between "
                     "\"-csr\",\"-ellp\" and \"-coo\"."
                  << endl;
-            cout << "\t<threads>                 Threads to parallel SPMV operation." << endl;
+            cout << "\t<threads>                 Threads to parallel vector matrix operation." << endl;
+            cout << "\t<method>                  Which way to collect output decision vector. By default processes are "
+                    "synchronized and output is blocking."
+                    "\n\t\t\t\t  Type \"-gather\"  to gather output vectors to main process and sort before output"
+                 << endl;
+            cout << "\t<output>                  Where to write.By default writing to stdout. Type \"-file\" to write "
+                    "to \solution.txt\""
+                 << endl;
         }
         MPI_Finalize();
         return 1;
@@ -355,7 +364,11 @@ int main(int argc, char **argv) {
                 if (!type)
                     IO::draw_mesh(Nx - 1, Ny - 1, k3, k4);
             }
-        } else if (!strcmp(argv[argc - 3], "--solver")) {
+        } else if (!strcmp(argv[argc - 3], "--solver") || !strcmp(argv[argc - 4], "--solver") ||
+                   !strcmp(argv[argc - 5], "--solver")) {
+
+            SolverInfo *solverInfo = new SolverInfo();
+
             parallel::barrier();
             if (proc_id == MASTER_ID) {
                 cout << endl;
@@ -365,8 +378,98 @@ int main(int argc, char **argv) {
             }
             parallel::barrier();
 
+            if (!strcmp(argv[argc - 3], "--solver")) {
+                solverInfo->outputStrategy = OutputStrategy::SEPARATE;
+                solverInfo->outputType = OutputType::STDOUT;
+
+                if (atoi(argv[argc - 1]) >= 1) {
+                    solverInfo->threadsNumber = atoi(argv[argc - 2]);
+                } else {
+                    parallel::printf_master(proc_id, "Threads number can't be lower than 1!");
+                    delete nodesInfo;
+                    return 1;
+                }
+
+                if (!strcmp("-csr", argv[argc - 2])) {
+                    solverInfo->sparseMatrixType = SparseType::CSR;
+                } else if (!strcmp("-ellp", argv[argc - 2])) {
+                    solverInfo->sparseMatrixType = SparseType::ELLPACK;
+                } else if (!strcmp("-coo", argv[argc - 2])) {
+                    solverInfo->sparseMatrixType = SparseType::COO;
+                } else {
+                    parallel::printf_master(proc_id, "Wrong sparse matrix format chosen!");
+                    delete nodesInfo;
+                    return 1;
+                }
+
+            } else if (!strcmp(argv[argc - 4], "--solver")) {
+                solverInfo->outputType = OutputType::STDOUT;
+                if (atoi(argv[argc - 2]) >= 1) {
+                    solverInfo->threadsNumber = atoi(argv[argc - 2]);
+                } else {
+                    parallel::printf_master(proc_id, "Threads number can't be lower than 1!");
+                    delete nodesInfo;
+                    return 1;
+                }
+
+                if (!strcmp("-gather", argv[argc - 1])) {
+                    solverInfo->outputStrategy = OutputStrategy::GATHER;
+                } else {
+                    parallel::printf_master(proc_id, "Wrong result collection type chosen!");
+                    delete nodesInfo;
+                    return 1;
+                }
+
+                if (!strcmp("-csr", argv[argc - 3])) {
+                    solverInfo->sparseMatrixType = SparseType::CSR;
+                } else if (!strcmp("-ellp", argv[argc - 2])) {
+                    solverInfo->sparseMatrixType = SparseType::ELLPACK;
+                } else if (!strcmp("-coo", argv[argc - 2])) {
+                    solverInfo->sparseMatrixType = SparseType::COO;
+                } else {
+                    parallel::printf_master(proc_id, "Wrong sparse matrix format chosen!");
+                    delete nodesInfo;
+                    return 1;
+                }
+            } else {
+                if (!strcmp("-file", argv[argc - 1])) {
+                    solverInfo->outputType = OutputType::FILE;
+                } else {
+                    parallel::printf_master(proc_id, "Wrong output format type chosen!");
+                    delete nodesInfo;
+                    return 1;
+                }
+
+                if (atoi(argv[argc - 3]) >= 1) {
+                    solverInfo->threadsNumber = atoi(argv[argc - 3]);
+                } else {
+                    parallel::printf_master(proc_id, "Threads number can't be lower than 1!");
+                    delete nodesInfo;
+                    return 1;
+                }
+
+                if (!strcmp("-gather", argv[argc - 2])) {
+                    solverInfo->outputStrategy = OutputStrategy::GATHER;
+                } else {
+                    parallel::printf_master(proc_id, "Wrong result collection type chosen!");
+                    delete nodesInfo;
+                    return 1;
+                }
+
+                if (!strcmp("-csr", argv[argc - 4])) {
+                    solverInfo->sparseMatrixType = SparseType::CSR;
+                } else if (!strcmp("-ellp", argv[argc - 4])) {
+                    solverInfo->sparseMatrixType = SparseType::ELLPACK;
+                } else if (!strcmp("-coo", argv[argc - 4])) {
+                    solverInfo->sparseMatrixType = SparseType::COO;
+                } else {
+                    parallel::printf_master(proc_id, "Wrong sparse matrix format chosen!");
+                    delete nodesInfo;
+                    return 1;
+                }
+            }
             parallel::printf_master(proc_id, "Number of processes: %d\n", proc_number);
-            parallel::printf_master(proc_id, "Master process 0 started on %s\n", proc_name);
+            parallel::printf_master(proc_id, "Master process %d started on %s\n", MASTER_ID, proc_name);
 
             topoEN.clear();
             topoNE.clear();
@@ -380,21 +483,17 @@ int main(int argc, char **argv) {
             }
 
             parallel::barrier();
-            start = omp_get_wtime();
 
             size_t totalSize = static_cast<size_t>(Nx) * Ny;
-            solver::solveFromTopoNN(topoNN, argv[argc - 2], nodesInfo, neighbors, send, recv, L2G, n_own, totalSize,
-                                    atoi(argv[argc - 1]));
+            solver::solveFromTopoNN(topoNN, nodesInfo, neighbors, send, recv, L2G, n_own, totalSize, end, solverInfo);
             parallel::barrier();
-            end = omp_get_wtime();
-            parallel::printf_master(proc_id, "\nSolution time: %.6g\n", end - start);
+            parallel::printf_master(proc_id, "\nSolution time: %.6g\n", end);
 
             delete nodesInfo;
 
         } else {
-            cout << "Expected \"--vtk\" <filename> ,\"--file\" or \"--print\" or "
-                    "\"--solver <format> <threads>\""
-                 << endl;
+            parallel::printf_master(proc_id, "Expected \"--vtk\" <filename> ,\"--file\" or \"--print\" or "
+                                             "\"--solver <format> <threads> <method> <output>\"");
             return 1;
         }
 

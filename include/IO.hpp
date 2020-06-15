@@ -7,6 +7,8 @@
 #include "FixedSizeMeshContainer.hpp"
 #include "VariableSizeMeshContainer.hpp"
 #include "platformDependencies.hpp"
+#include "solver.hpp"
+#include "solverInfo.hpp"
 #include "vmo.hpp"
 
 namespace IO {
@@ -172,11 +174,12 @@ int read_file(FixedSizeMeshContainer<T1> &C, VariableSizeMeshContainer<T2> &topo
     return 0;
 }
 
-void MPI_gather_write(const std::string &filename, const vector<double> &solution, const size_t n_own,
+void mpi_gather_write(OutputType solverOutType, const vector<double> &solution, const size_t n_own,
                       const vector<int> &L2G, const size_t totalSize);
 
-void MPI_self_write(const std::string &filename, const vector<double> &solution, const size_t n_own,
+void mpi_self_write(OutputType solverOutType, const vector<double> &solution, const size_t n_own,
                     const vector<int> &L2G);
+
 } // namespace IO
 
 #endif
