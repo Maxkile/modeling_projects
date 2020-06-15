@@ -47,6 +47,7 @@ int main(int argc, char **argv) {
     int type = 0;
 
     NodesInfo *nodesInfo = nullptr; // used only in terminal input. Contains info about nodes to operate with
+    SolverInfo* solverInfo = nullptr;
 
     double start, end, start_temp, end_temp;
 
@@ -211,7 +212,7 @@ int main(int argc, char **argv) {
         // Allocating nodesInfo struct
         nodesInfo = new NodesInfo(nodes.size(), NodesType::ALL); // default
 
-        SolverInfo *solverInfo = new SolverInfo();
+        solverInfo = new SolverInfo();
 
         // Default params
         solverInfo->threadsNumber = DEFAULT_THREADS_NUM;
@@ -398,9 +399,11 @@ int main(int argc, char **argv) {
         cout.flush();
         parallel::printf_master(proc_id, "\nSolution time: %.6g\n", end);
 
+        delete solverInfo;
         delete nodesInfo;
     } catch (exception &exc) {
         cout << exc.what() << endl;
+        delete solverInfo;
         delete nodesInfo;
         return 1;
     }

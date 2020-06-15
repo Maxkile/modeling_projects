@@ -177,7 +177,7 @@ int read_file(FixedSizeMeshContainer<T1> &C, VariableSizeMeshContainer<T2> &topo
 void mpi_gather_write(OutputType solverOutType, const vector<double> &solution, const size_t n_own,
                       const vector<int> &L2G, const size_t totalSize);
 
-void mpi_self_write(OutputType solverOutType, const vector<double> &solution, const size_t n_own,
+void mpi_separate_write(OutputType solverOutType, const vector<double> &solution, const size_t n_own,
                     const vector<int> &L2G);
 
 } // namespace IO

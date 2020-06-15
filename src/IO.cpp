@@ -5,7 +5,7 @@ int decision_comparator(const void* dec1,const void* dec2){
     const parallel::Decision *decision_1 = static_cast<const parallel::Decision*>(dec1);
     const parallel::Decision *decision_2 = static_cast<const parallel::Decision*>(dec2);
 
-    int delta = decision_1->id > decision_2->id;
+    int delta = decision_1->id - decision_2->id;
     if (delta < 0){
         return -1;
     } else if (delta > 0){
@@ -108,17 +108,14 @@ void IO::mpi_gather_write(OutputType solverOutType, const vector<double>& soluti
 
     if (proc_id == MASTER_ID) {
         time = omp_get_wtime();
-        qsort(total,totalSize,sizeof(parallel::Decision),decision_comparator);//
+        qsort(total,totalSize,sizeof(parallel::Decision),decision_comparator);
         time = omp_get_wtime() - time;
     }
 
     if (solverOutType == OutputType::STDOUT) {
         if (proc_id == MASTER_ID) {
-            cout << "Id: "
-                << "    |   "
-                << "Value:" << std::endl;
             for (size_t i = 0; i < totalSize; ++i) {
-                cout << total[i].id << " " << total[i].answer << endl;
+                cout << total[i].answer << endl;
             }
             cout.flush();
         }
@@ -127,11 +124,8 @@ void IO::mpi_gather_write(OutputType solverOutType, const vector<double>& soluti
         std::ofstream fout;
         if (proc_id == MASTER_ID) {
             fout.open("solution_gather.txt");
-            fout << "Id: "
-                << "    |   "
-                << "Value:" << std::endl;
             for (size_t i = 0; i < totalSize; ++i) {
-                fout << total[i].id << " " << total[i].answer << endl;
+                fout << total[i].answer << endl;
             }
             fout.flush();
             fout.close();
@@ -145,7 +139,7 @@ void IO::mpi_gather_write(OutputType solverOutType, const vector<double>& soluti
     }
 }
 
-void IO::mpi_self_write(OutputType solverOutType, const vector<double>& solution, const size_t n_own, const vector<int>& L2G) {
+void IO::mpi_separate_write(OutputType solverOutType, const vector<double>& solution, const size_t n_own, const vector<int>& L2G) {
 
     parallel::printf_master(proc_id, LINE_SEPARATOR, "\t\t Gather writing",LINE_SEPARATOR);
     parallel::barrier();

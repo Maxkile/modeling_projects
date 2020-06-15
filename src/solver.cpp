@@ -53,7 +53,7 @@ int solver::solveFromTopoNN(const VariableSizeMeshContainer<int> &topoNN, NodesI
     if (solverInfo->outputStrategy == OutputStrategy::GATHER) {
         IO::mpi_gather_write(solverInfo->outputType, x, n_own, L2G, totalSize);
     } else {
-        IO::mpi_self_write(solverInfo->outputType, x, n_own, L2G);
+        IO::mpi_separate_write(solverInfo->outputType, x, n_own, L2G);
     }
 
     parallel::barrier();
