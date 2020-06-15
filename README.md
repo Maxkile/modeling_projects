@@ -6,8 +6,13 @@ Result is written to the "solution.txt" and "solution_gather.txt".
 Vector-column b by default is [1,1,1,1,1,1, ... ,1] + L2G[i]
 
 To build:
+  Linux:
+  
   1) cmake CmakeLists.txt
   2) make -f Makefile
+  
+  Windows:
+    Use Visual Studio Project files
 
 Note: make sure that composition of submeshes(Px,Py) must be equal to value "-n"(processes number) or decomposition will have no effect.
 
