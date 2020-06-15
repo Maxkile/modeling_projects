@@ -127,10 +127,10 @@ VariableSizeMeshContainer<int> topos::build_topoEN(int Nx, int Ny, int k3, int k
     vector<int> temp;
     VariableSizeMeshContainer<int> topoEN(temp, BlockSize);
 
-    size_t beg_i = submeshes[submesh_id].second[0];
-    size_t end_i = submeshes[submesh_id].second[1];
-    size_t beg_j = submeshes[submesh_id].second[2];
-    size_t end_j = submeshes[submesh_id].second[3];
+    int beg_i = submeshes[submesh_id].second[0];
+    int end_i = submeshes[submesh_id].second[1];
+    int beg_j = submeshes[submesh_id].second[2];
+    int end_j = submeshes[submesh_id].second[3];
 
     if ((beg_i > Nx) || (end_i > Nx) || (beg_j > Ny) || (end_j > Ny) || (beg_i < 0) || (beg_j < 0) || (end_i <= 0) ||
         (end_j <= 0)) {
@@ -142,7 +142,7 @@ VariableSizeMeshContainer<int> topos::build_topoEN(int Nx, int Ny, int k3, int k
                                                         // triangles are one element themselves
     int meshFigureStructureCur = computeMeshFiguresNumberLeft(k3, k4, fullElementsSkipped, 0);
 
-    size_t cur_i = beg_i, cur_j = beg_j, node_id = 0, haloes_size = 0;
+    int cur_i = beg_i, cur_j = beg_j, node_id = 0, haloes_size = 0;
     while (cur_i <= end_i) {
         while (cur_j <= end_j) {
             // Forming vectors

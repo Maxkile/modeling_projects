@@ -98,10 +98,10 @@ void parallel::build_list_send_recv(VariableSizeMeshContainer<int> &topoNN, vect
     }
 }
 
-void parallel::gather_all(Decision *total, const vector<double> &local_solution, size_t n_own, const vector<int> &L2G) {
+void parallel::gather_all(Decision *total, const vector<double> &local_solution, int n_own, const vector<int> &L2G) {
     int *recvcounts = nullptr;
     int *offsets = nullptr;
-    size_t size = 0;
+    int size = 0;
 
     Decision *buf_send;
     // Creating and registring custom data type
@@ -151,7 +151,7 @@ void parallel::gather_all(Decision *total, const vector<double> &local_solution,
 
     // Copying data...
     buf_send = new Decision[size];
-    for (size_t i = 0; i < n_own; ++i) {
+    for (int i = 0; i < n_own; ++i) {
         buf_send[i].id = L2G[i];
         buf_send[i].answer = local_solution[i];
     }

@@ -24,6 +24,8 @@ struct Ne_scheme_bufs {
 
     Ne_scheme_bufs() : send_buf(nullptr), recv_buf(nullptr) {}
 
+    Ne_scheme_bufs(size_t id) : neighbour_id(id), send_buf(nullptr), recv_buf(nullptr) {}
+
     ~Ne_scheme_bufs();
 };
 
@@ -50,7 +52,7 @@ void build_list_of_neighbors(map<int, int> &list_of_neighbors, const vector<int>
 void build_list_send_recv(VariableSizeMeshContainer<int> &topoNN, vector<int> &part, map<int, int> &list_of_neighbors,
                           vector<set<int>> &send, vector<set<int>> &recv, int self_id);
 
-void gather_all(Decision *total, const vector<double> &local_solution, size_t n_own, const vector<int> &L2G);
+void gather_all(Decision *total, const vector<double> &local_solution, int n_own, const vector<int> &L2G);
 
 void update_halo(vector<double> &x, map<int, int> &list_of_neighbors, vector<set<int>> &send, vector<set<int>> &recv,
                  int proccessor_id, MPI_Comm mpi_comm = MPI_COMM_WORLD);

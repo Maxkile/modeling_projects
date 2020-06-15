@@ -43,7 +43,7 @@ std::vector<double> vmo::conGradSolver<double, double>(const Sparse<double> *A, 
                                                        map<int, int> &list_of_neighbors, vector<set<int>> &send,
                                                        vector<set<int>> &recv, int n_own, NodesInfo *nodesinfo,
                                                        size_t threadsNum, size_t n_max, double eps) {
-    unsigned count = A->getDenseColumns();
+    size_t count = A->getDenseColumns();
     std::vector<double> x_prev(count);
     double timeSPmv = 0;
     double r_prev_norm;
